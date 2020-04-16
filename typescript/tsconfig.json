@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "ES2016",
+    "module": "es2015",
+    "sourceMap": true,
+    "outDir": "./js/",
+    "rootDir": "./src/",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
