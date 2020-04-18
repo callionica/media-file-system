@@ -46,6 +46,25 @@ let FS = (function () {
     }
     return { item, items, name, isFolder };
 })();
+// Get all the items contained in a set of folders grouped by name
+// Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
+// and /Disk2/folderA/folderB/ to contribute files to the same tree
+function mergedItems(containers) {
+    let result = [];
+    for (let container of containers) {
+        let items = FS.items(container);
+        for (let item of items) {
+            let name = FS.name(item.url);
+            let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
+            if (existing === undefined) {
+                existing = { name, items: [] };
+                result.push(existing);
+            }
+            existing.items.push(item);
+        }
+    }
+    return result;
+}
 function isEntry(value) {
     return value.kind !== undefined;
 }

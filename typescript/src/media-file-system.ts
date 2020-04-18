@@ -29,7 +29,7 @@ interface FS {
     // Get the items contained in a folder or linked folder
     // Does not fail for non-existent items
     // Does not fail for non-folders
-    items(item: FSItem): FSItem[];
+    items(container: FSItem): FSItem[];
 
     // Get the name and optional extension from a file system URL
     name(url: FSURL): FSName;
@@ -115,6 +115,26 @@ let FS: FS = (function () {
     return { item, items, name, isFolder };
 })();
 
+// Get all the items contained in a set of folders grouped by name
+// Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
+// and /Disk2/folderA/folderB/ to contribute files to the same tree
+function mergedItems(containers: FSItem[]): { name: FSName, items: FSItem[] }[] {
+    let result: { name: FSName, items: FSItem[] }[] = [];
+    for (let container of containers) {
+        let items = FS.items(container);
+        for (let item of items) {
+            let name = FS.name(item.url);
+            let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
+            if (existing === undefined) {
+                existing = { name, items: [] };
+                result.push(existing);
+            }
+            existing.items.push(item);
+        }
+    }
+    return result;
+}
+
 /*
 Conceptually, an entry lives in a file system tree
 It may really exist there as a file or folder or 
@@ -132,7 +152,7 @@ interface Entry {
 
     name: string;
     extension: string;
-    
+
     entries: Entry[];
 }
 
@@ -148,7 +168,7 @@ function nameExt(path: FSPath): [string, string] {
     return ["test", "ext"]; // TODO
 }
 
-function rename({from, to}: {from: FSPath, to: FSPath}) {
+function rename({ from, to }: { from: FSPath, to: FSPath }) {
     // TODO
 }
 
@@ -158,12 +178,12 @@ class FolderEntry implements Entry {
     _path: FSPath;
     _name: string;
     _extension: string;
-    
+
     _entries: Entry[] | undefined;
 
     constructor(parent: Entry | FSPath, name: string, extension: string) {
         this.kind = "folder";
-        if (isEntry(parent)) { 
+        if (isEntry(parent)) {
             this._parent = parent;
             this._path = "";
         } else {
@@ -211,7 +231,7 @@ class FolderEntry implements Entry {
         this._extension = value;
     }
 
-    get entries() : Entry[] {
+    get entries(): Entry[] {
         if (this._entries === undefined) {
             this._entries = [];
         }

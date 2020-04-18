@@ -74,8 +74,8 @@
         "signature": "a1205f8b74ba57896ae4eb9ff19a5ffc7f210352b0b535abcd36d6b06225a3ac"
       },
       "./src/media-file-system.ts": {
-        "version": "906168f00628cfd4b3d776c742056f65e8e978e8930f2ea0d944e93deae94620",
-        "signature": "42d3be40cbce0dcf658ab337ca494d6c6dcc20c1610964ef9039ba04477b64c9"
+        "version": "c43297ff2c0b62d99d09414a73a6132754a29beda01b9cd95d7b226cd4b7d1a5",
+        "signature": "4789390ad405c1756747e63b500072b19467e2af079bdac2c60627ceb783bd4c"
       }
     },
     "options": {
