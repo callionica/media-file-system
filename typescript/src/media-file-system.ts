@@ -113,10 +113,16 @@ let FS: FS = (function () {
     return { item, items, name, isFolder };
 })();
 
-// Get all the items contained in a set of folders grouped by name
+// A collection of FSItems with the same name
+interface FSGroup {
+    name: FSName;
+    items: FSItem[];
+}
+
+// Get all the items contained in a set of folders and group them by name.
 // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
 // and /Disk2/folderA/folderB/ to contribute files to the same tree.
-function mergedItems(containers: FSItem[]): { name: FSName, items: FSItem[] }[] {
+function mergedItems(containers: FSItem[]): FSGroup[] {
     let result: { name: FSName, items: FSItem[] }[] = [];
     for (let container of containers) {
         let items = FS.items(container);
@@ -133,6 +139,8 @@ function mergedItems(containers: FSItem[]): { name: FSName, items: FSItem[] }[] 
     }
     return result;
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
 Conceptually, an entry lives in a file system tree

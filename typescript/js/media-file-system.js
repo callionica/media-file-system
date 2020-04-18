@@ -45,7 +45,7 @@ let FS = (function () {
     }
     return { item, items, name, isFolder };
 })();
-// Get all the items contained in a set of folders grouped by name
+// Get all the items contained in a set of folders and group them by name.
 // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
 // and /Disk2/folderA/folderB/ to contribute files to the same tree.
 function mergedItems(containers) {
