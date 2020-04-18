@@ -115,7 +115,7 @@ let FS: FS = (function () {
 
 // Get all the items contained in a set of folders grouped by name
 // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
-// and /Disk2/folderA/folderB/ to contribute files to the same tree
+// and /Disk2/folderA/folderB/ to contribute files to the same tree.
 function mergedItems(containers: FSItem[]): { name: FSName, items: FSItem[] }[] {
     let result: { name: FSName, items: FSItem[] }[] = [];
     for (let container of containers) {
@@ -124,10 +124,11 @@ function mergedItems(containers: FSItem[]): { name: FSName, items: FSItem[] }[] 
             let name = FS.name(item.url);
             let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
             if (existing === undefined) {
-                existing = { name, items: [] };
+                existing = { name, items: [item] };
                 result.push(existing);
+            } else {
+                existing.items.push(item);
             }
-            existing.items.push(item);
         }
     }
     return result;
