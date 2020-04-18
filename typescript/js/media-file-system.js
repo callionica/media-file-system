@@ -5,6 +5,9 @@ let FS = (function () {
     function isFolder(url) {
         return url.endsWith(separator);
     }
+    function isFolderItem(item) {
+        return (isFolder(item.url) || ((item.targetURL !== undefined) && isFolder(item.targetURL)));
+    }
     function isFSURL(path) {
         return path.startsWith("file:");
     }
@@ -43,7 +46,7 @@ let FS = (function () {
         let o = e.allObjects.js;
         return o.map(url => item(url.absoluteString.js));
     }
-    return { item, items, name, isFolder };
+    return { item, items, name, isFolder, isFolderItem };
 })();
 // Get all the items contained in a set of folders and group them by name.
 // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
@@ -65,6 +68,72 @@ function mergedItems(containers) {
         }
     }
     return result;
+}
+const categories = [
+    { extensions: ["m4a"], kind: "audio", leader: true },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", leader: true },
+    { extensions: ["text"], kind: "text", leader: false },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", leader: false },
+    { extensions: ["vtt", "ttml"], kind: "subtitle", leader: false },
+];
+const defaultCategory = { extensions: [], kind: "unknown", leader: false };
+const folderCategory = { extensions: [], kind: "folder", leader: true };
+function category(name) {
+    if (name.extension !== undefined) {
+        let ext = name.extension.toLowerCase();
+        let category = categories.find(category => category.extensions.includes(ext));
+        if (category !== undefined) {
+            return category;
+        }
+    }
+    return defaultCategory;
+}
+class MFSContainer {
+    constructor(group, parent) {
+        this.group = group;
+        this.isFolder = group.items.some(FS.isFolderItem);
+        this.category_ = this.isFolder ? folderCategory : category(group.name);
+        if (parent !== undefined) {
+            this.parent = parent;
+            // Note that parent.children is not usable during construction
+        }
+    }
+    get kind() {
+        return this.category_.kind;
+    }
+    get isLeader() {
+        return this.category_.leader;
+    }
+    get name() {
+        return this.group.name;
+    }
+    get children() {
+        if (this.children_ === undefined) {
+            let groups = mergedItems(this.group.items);
+            this.children_ = groups.map(group => new MFSContainer(group, this));
+        }
+        return this.children_;
+    }
+    get analysis() {
+        if (this.analysis_ !== undefined) {
+            return this.analysis_;
+        }
+        let leaders = [];
+        let followers = [];
+        for (let child of this.children) {
+            if (child.isLeader) {
+                leaders.push(child);
+            }
+            else {
+                followers.push(child);
+            }
+        }
+        this.analysis_ = { leaders, followers };
+        return this.analysis_;
+    }
+    toJSON() {
+        return Object.assign(Object.assign({}, this.group), { children: this.children_ });
+    }
 }
 function isEntry(value) {
     return value.kind !== undefined;
