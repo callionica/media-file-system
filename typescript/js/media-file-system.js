@@ -37,58 +37,12 @@ let FS = (function () {
         let targetURL = nsurl.URLByResolvingSymlinksInPath.absoluteString.js;
         return (url === targetURL) ? { url } : { url, targetURL };
     }
-    function items(item) {
-        function isDirectory(url) {
-            var value = $();
-            url.getResourceValueForKeyError(value, $.NSURLIsDirectoryKey, null);
-            return value.boolValue;
-        }
-        function getType(url) {
-            var value = $();
-            url.getResourceValueForKeyError(value, $.NSURLTypeIdentifierKey, null);
-            return value.js;
-        }
-        function mimetypeFromType(type) {
-            if (type == "public.mpeg-2-transport-stream") {
-                return "video/mp2t";
-            }
-            return ObjC.unwrap($.UTTypeCopyPreferredTagWithClass(type, $.kUTTagClassMIMEType));
-        }
-        function nameWithoutExtension(name) {
-            var index = name.lastIndexOf(".");
-            if (index >= 0) {
-                return name.substring(0, index);
-            }
-            return name;
-        }
-        var directoryURL = $.NSURL.URLWithString(item.targetURL || item.url);
-        var keys = $.NSArray.arrayWithObjects($.NSURLIsDirectoryKey, $.NSURLTypeIdentifierKey);
-        var e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
-        var o = e.allObjects.js;
-        return o.map(function (url) {
-            var path = url.pathComponents.js.map(c => c.js);
-            var type = getType(url);
-            var linkTo;
-            if (type == "public.symlink") {
-                linkTo = url.URLByResolvingSymlinksInPath;
-                type = getType(linkTo);
-            }
-            let mimetype = mimetypeFromType(type);
-            let extension = url.pathExtension.js;
-            if (!mimetype) {
-                if (extension === "ttml") {
-                    mimetype = "application/ttml+xml";
-                }
-            }
-            return {
-                name: nameWithoutExtension(url.lastPathComponent.js),
-                extension,
-                type,
-                mimetype,
-                url: url.absoluteString.js,
-                targetURL: linkTo ? linkTo.absoluteString.js : undefined,
-            };
-        });
+    function items(container) {
+        let directoryURL = $.NSURL.URLWithString(container.targetURL || container.url);
+        let keys = $();
+        let e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
+        let o = e.allObjects.js;
+        return o.map(url => item(url.absoluteString.js));
     }
     return { item, items, name, isFolder };
 })();

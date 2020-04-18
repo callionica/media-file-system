@@ -8,8 +8,8 @@ type FSURL = string;
 
 // FSItem is a file, folder, or link in the file system
 interface FSItem {
-    url : FSURL,
-    targetURL? : FSURL
+    url: FSURL,
+    targetURL?: FSURL
 }
 
 // FSName is the name/extension pair
@@ -32,28 +32,28 @@ interface FS {
     items(item: FSItem): FSItem[];
 
     // Get the name and optional extension from a file system URL
-    name(url: FSURL) : FSName;
+    name(url: FSURL): FSName;
 
     // Does a file system URL represent a folder
-    isFolder(url: FSURL) : boolean;
+    isFolder(url: FSURL): boolean;
 }
 
-declare let ObjC : any;
-declare let $ : any;
+declare let ObjC: any;
+declare let $: any;
 
 let FS: FS = (function () {
     const separator = "/";
 
-    function isFolder(url: FSURL) : boolean {
+    function isFolder(url: FSURL): boolean {
         return url.endsWith(separator);
     }
 
-    function isFSURL(path: FSURL | FSPath) : path is FSURL {
+    function isFSURL(path: FSURL | FSPath): path is FSURL {
         return path.startsWith("file:");
     }
 
-    function name(url: FSURL) : FSName {
-        
+    function name(url: FSURL): FSName {
+
         let last = url.endsWith(separator) ? url.length - 2 : url.length - 1;
         let slashIndex = url.lastIndexOf(separator, last);
         let name = decodeURIComponent(url.substring(slashIndex + 1, last + 1));
@@ -77,7 +77,7 @@ let FS: FS = (function () {
     }
 
     interface NSURL {
-        getResourceValueForKeyError(value: any, key: any, error: any) : any;
+        getResourceValueForKeyError(value: any, key: any, error: any): any;
         readonly pathExtension: NSString;
         readonly absoluteString: NSString;
         readonly lastPathComponent: NSString;
@@ -92,77 +92,24 @@ let FS: FS = (function () {
     const NSDirectoryEnumerationSkipsPackageDescendants = 1 << 1;
     const NSDirectoryEnumerationSkipsHiddenFiles = 1 << 2;
 
-    function toFSURL(path: FSPath) : FSURL {
+    function toFSURL(path: FSPath): FSURL {
         return $.NSURL.fileURLWithPath(path).absoluteString.js;
     }
 
-    function item(path: FSPath | FSURL) : FSItem {
-        let url : FSURL = isFSURL(path) ? path : toFSURL(path);
+    function item(path: FSPath | FSURL): FSItem {
+        let url: FSURL = isFSURL(path) ? path : toFSURL(path);
         let nsurl = $.NSURL.URLWithString(url);
-        let targetURL : FSURL = nsurl.URLByResolvingSymlinksInPath.absoluteString.js;
+        let targetURL: FSURL = nsurl.URLByResolvingSymlinksInPath.absoluteString.js;
         return (url === targetURL) ? { url } : { url, targetURL };
     }
 
-    function items(item: FSItem) : FSItem[] {
+    function items(container: FSItem): FSItem[] {
+        let directoryURL = $.NSURL.URLWithString(container.targetURL || container.url);
+        let keys = $();
+        let e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
 
-        function isDirectory(url: NSURL) : boolean {
-            var value = $();
-            url.getResourceValueForKeyError(value, $.NSURLIsDirectoryKey, null)
-            return value.boolValue;
-        }
-
-        function getType(url: NSURL) : string {
-            var value = $();
-            url.getResourceValueForKeyError(value, $.NSURLTypeIdentifierKey, null)
-            return value.js;
-        }
-
-        function mimetypeFromType(type: string) : string {
-            if (type == "public.mpeg-2-transport-stream") {
-                return "video/mp2t";
-            }
-            return ObjC.unwrap($.UTTypeCopyPreferredTagWithClass(type, $.kUTTagClassMIMEType));
-        }
-
-        function nameWithoutExtension(name: string): string {
-            var index = name.lastIndexOf(".");
-            if (index >= 0) {
-                return name.substring(0, index);
-            }
-            return name;
-        }
-
-        var directoryURL = $.NSURL.URLWithString(item.targetURL || item.url);
-        var keys = $.NSArray.arrayWithObjects($.NSURLIsDirectoryKey, $.NSURLTypeIdentifierKey);
-
-        var e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
-
-        var o = e.allObjects.js;
-
-        return o.map(function (url: NSURL) {
-            var path = url.pathComponents.js.map(c => c.js);
-            var type = getType(url);
-            var linkTo;
-            if (type == "public.symlink") {
-                linkTo = url.URLByResolvingSymlinksInPath;
-                type = getType(linkTo);
-            }
-            let mimetype = mimetypeFromType(type);
-            let extension = url.pathExtension.js;
-            if (!mimetype) {
-                if (extension === "ttml") {
-                    mimetype = "application/ttml+xml";
-                }
-            }
-            return {
-                name: nameWithoutExtension(url.lastPathComponent.js),
-                extension,
-                type,
-                mimetype,
-                url: url.absoluteString.js,
-                targetURL: linkTo ? linkTo.absoluteString.js : undefined,
-            };
-        });
+        let o: [NSURL] = e.allObjects.js;
+        return o.map(url => item(url.absoluteString.js));
     }
 
     return { item, items, name, isFolder };
