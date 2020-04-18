@@ -74,8 +74,8 @@
         "signature": "a1205f8b74ba57896ae4eb9ff19a5ffc7f210352b0b535abcd36d6b06225a3ac"
       },
       "./src/media-file-system.ts": {
-        "version": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "signature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        "version": "8908d9c7ca58d2b8cd699bc7a3b96ede3d739fd9ab009e2e6176f9c58198cbdf",
+        "signature": "42d3be40cbce0dcf658ab337ca494d6c6dcc20c1610964ef9039ba04477b64c9"
       }
     },
     "options": {
@@ -94,10 +94,9 @@
     "exportedModulesMap": {},
     "semanticDiagnosticsPerFile": [
       "./src/media-file-system.ts",
+      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es5.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.d.ts",
-      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.full.d.ts",
-      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es5.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.iterable.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.webworker.importscripts.d.ts",
@@ -111,7 +110,8 @@
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.reflect.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.symbol.d.ts",
       "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.symbol.wellknown.d.ts",
-      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.array.include.d.ts"
+      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.array.include.d.ts",
+      "../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2016.full.d.ts"
     ]
   },
   "version": "3.6.4"
