@@ -15,11 +15,10 @@ let FS = (function () {
         let extension = undefined;
         let dotIndex = name.lastIndexOf(".");
         if (dotIndex >= 0) {
-            name = name.substring(0, dotIndex);
-            extension = name.substring(dotIndex + 1);
-        }
-        if (extension !== undefined) {
-            return { name, extension };
+            return {
+                name: name.substring(0, dotIndex),
+                extension: name.substring(dotIndex + 1)
+            };
         }
         return { name };
     }
