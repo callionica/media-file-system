@@ -149,22 +149,24 @@ function mergedItems(containers: FSItem[]): FSGroup[] {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+type CategoryKind = "audio" | "video" | "text" | "image" | "subtitle" | "folder" | "unknown";
+
 interface Category {
     extensions: string[];
-    kind: string;
-    leader: boolean;
+    kind: CategoryKind;
+    isLeader: boolean;
 }
 
-const categories : Category[] = [
-    { extensions: ["m4a"], kind: "audio", leader: true },
-    { extensions: ["m4v", "mp4", "ts"], kind: "video", leader: true },
-    { extensions: ["text"], kind: "text", leader: false },
-    { extensions: ["jpeg", "jpg", "png"], kind: "image", leader: false },
-    { extensions: ["vtt", "ttml"], kind: "subtitle", leader: false },
+const categories: Category[] = [
+    { extensions: ["m4a"], kind: "audio", isLeader: true },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
+    { extensions: ["text"], kind: "text", isLeader: false },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
+    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
 ];
 
-const defaultCategory : Category = { extensions: [], kind: "unknown", leader: false };
-const folderCategory : Category = { extensions: [], kind: "folder", leader: true };
+const folderCategory: Category = { extensions: [], kind: "folder", isLeader: true };
+const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false };
 
 function category(name: FSName): Category {
     if (name.extension !== undefined) {
@@ -177,15 +179,23 @@ function category(name: FSName): Category {
     return defaultCategory;
 }
 
-class MFSContainer {
+function isLeaderFollower(leader: FSName, follower: FSName): boolean {
+    let l = leader.name + ".";
+    let f = follower.name + ".";
+    return f.startsWith(l);
+}
+
+class MFSItem {
     group: FSGroup;
     category_: Category;
-    isFolder: boolean; // A container can be a folder and not-a-folder at the same time
-    parent?: MFSContainer;
-    children_?: MFSContainer[];
-    analysis_?: any;
+    // An item can be a folder and not-a-folder at the same time
+    isFolder: boolean;
+    parent?: MFSItem;
+    children_?: MFSItem[];
+    leaders_?: MFSItem[];
+    followers_?: MFSItem[];
 
-    constructor(group: FSGroup, parent?: MFSContainer) {
+    constructor(group: FSGroup, parent?: MFSItem) {
         this.group = group;
         this.isFolder = group.items.some(FS.isFolderItem);
         this.category_ = this.isFolder ? folderCategory : category(group.name);
@@ -196,200 +206,97 @@ class MFSContainer {
         }
     }
 
+    refresh() {
+        this.children_ = undefined;
+        this.leaders_ = undefined;
+        this.followers_ = undefined;
+    }
+
+    get siblings(): MFSItem[] {
+        if (this.parent === undefined) {
+            return [];
+        }
+        return this.parent.children;
+    }
+
     get kind(): string {
         return this.category_.kind;
     }
 
     get isLeader(): boolean {
-        return this.category_.leader;
+        return this.category_.isLeader;
+    }
+
+    // If I'm a follower, my leaders are either siblings or my parent
+    // Only followers have leaders
+    get leaders(): MFSItem[] {
+        if (this.leaders_ !== undefined) {
+            return this.leaders_;
+        }
+
+        if (this.isLeader) {
+            this.leaders_ = [];
+        } else {
+            let result: MFSItem[] = [];
+            if (this.parent !== undefined) {
+                if (isLeaderFollower(this.parent.name, this.name)) {
+                    result.push(this.parent);
+                }
+                for (let sibling of this.siblings) {
+                    if (isLeaderFollower(sibling.name, this.name)) {
+                        result.push(sibling);
+                    }
+                }
+            }
+            this.leaders_ = result;
+        }
+        return this.leaders_;
+    }
+
+    // If I'm a leader, my followers are either siblings or children
+    // Only leaders have followers
+    get followers(): MFSItem[] {
+        if (this.followers_ !== undefined) {
+            return this.followers_;
+        }
+
+        if (!this.isLeader) {
+            this.followers_ = [];
+        } else {
+            let result: MFSItem[] = [];
+
+            for (let sibling of this.siblings) {
+                if (isLeaderFollower(this.name, sibling.name)) {
+                    result.push(sibling);
+                }
+            }
+
+            for (let child of this.children) {
+                if (isLeaderFollower(this.name, child.name)) {
+                    result.push(child);
+                }
+            }
+
+            this.followers_ = result;
+        }
+        return this.followers_;
     }
 
     get name(): FSName {
         return this.group.name;
     }
 
-    get children(): MFSContainer[] {
+    get children(): MFSItem[] {
         if (this.children_ === undefined) {
             let groups = mergedItems(this.group.items);
-            this.children_ = groups.map(group => new MFSContainer(group, this));
+            this.children_ = groups.map(group => new MFSItem(group, this));
+            // TODO - add virtual leaders here, generated from parsing names
+            // parse name, if !item.exists, create virtual 
         }
         return this.children_;
-    }
-
-    get analysis() {
-        if (this.analysis_ !== undefined) {
-            return this.analysis_;
-        }
-
-        let leaders = [];
-        let followers = [];
-
-        for (let child of this.children) {
-            if (child.isLeader) {
-                leaders.push(child);
-            } else {
-                followers.push(child);
-            }
-        }
-
-        this.analysis_ = { leaders, followers };
-        return this.analysis_;
     }
 
     toJSON() {
         return { ...this.group, children: this.children_ };
     }
 }
-
-/*
-Conceptually, an entry lives in a file system tree
-It may really exist there as a file or folder or 
-it may be a virtual entry that is imagined into existence
-*/
-
-
-type EntryKind = "file" | "folder" | "virtual";
-
-interface Entry {
-    readonly kind: EntryKind;
-    readonly parent: Entry | undefined;
-    readonly path: FSPath;
-    readonly fullName: string;
-
-    name: string;
-    extension: string;
-
-    entries: Entry[];
-}
-
-function isEntry(value: any): value is Entry {
-    return value.kind !== undefined;
-}
-
-function dotExt(ext: string) {
-    return (ext.length > 0) ? "." + ext : ext;
-}
-
-function nameExt(path: FSPath): [string, string] {
-    return ["test", "ext"]; // TODO
-}
-
-function rename({ from, to }: { from: FSPath, to: FSPath }) {
-    // TODO
-}
-
-class FolderEntry implements Entry {
-    kind: "folder";
-    _parent: Entry | undefined;
-    _path: FSPath;
-    _name: string;
-    _extension: string;
-
-    _entries: Entry[] | undefined;
-
-    constructor(parent: Entry | FSPath, name: string, extension: string) {
-        this.kind = "folder";
-        if (isEntry(parent)) {
-            this._parent = parent;
-            this._path = "";
-        } else {
-            this._path = parent;
-        }
-        this._name = name;
-        this._extension = extension;
-        this._entries = undefined;
-    }
-
-    get parent() {
-        return this._parent;
-    }
-
-    get fullName() {
-        return `${this.name}${dotExt(this.extension)}`;
-    }
-
-    get parentPath() {
-        if (this.parent) {
-            return this.parent.path;
-        }
-        return this._path;
-    }
-
-    get path() {
-        return `${this.parentPath}${this.fullName}/`;
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    set name(value) {
-        rename({ from: this.path, to: `${this.parentPath}${value}${dotExt(this.extension)}/` });
-        this._name = value;
-    }
-
-    get extension() {
-        return this._extension;
-    }
-
-    set extension(value) {
-        rename({ from: this.path, to: `${this.parentPath}${this.name}${dotExt(value)}/` });
-        this._extension = value;
-    }
-
-    get entries(): Entry[] {
-        if (this._entries === undefined) {
-            this._entries = [];
-        }
-        return this._entries;
-    }
-}
-
-// /*
-// An entity is either a leader or a follower
-// Leaders may be follower-less and followers may be leader-less.
-// */
-// type EntityKind = "leader" | "follower";
-
-// interface Entity {
-//     kind: EntityKind;
-//     entry: Entry;
-// }
-
-// interface Leader extends Entity {
-//     kind: "leader";
-//     followers: Follower[];
-// }
-
-// interface Follower extends Entity {
-//     kind: "follower";
-//     leader: Leader;
-// }
-
-
-
-
-// type F = string;
-
-// interface Media {
-//     kind: "audio" | "video";
-//     file: F;
-//     name: string;
-//     date: string;
-//     subgroup: string;
-//     group: string;
-// }
-
-// class Folder {
-//     parentFiles: string[];
-//     files: string[];
-
-//     getMedia() : Media[] {
-//         return [];
-//     }
-
-//     constructor(files: string[], parentFiles: string[] = []) {
-//         this.files = files;
-//         this.parentFiles = parentFiles;
-//     }
-// }
