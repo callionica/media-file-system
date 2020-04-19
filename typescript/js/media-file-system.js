@@ -107,6 +107,7 @@ class MFSItem {
         this.children_ = undefined;
         this.leaders_ = undefined;
         this.followers_ = undefined;
+        this.tags_ = undefined;
     }
     get siblings() {
         if (this.parent === undefined) {
@@ -169,6 +170,21 @@ class MFSItem {
             this.followers_ = result;
         }
         return this.followers_;
+    }
+    // Only followers have tags
+    get tags() {
+        if (this.isLeader) {
+            return [];
+        }
+        let leader = this.leaders[0];
+        if (leader === undefined) {
+            return [];
+        }
+        let name = this.name.name;
+        let core = leader.name.name;
+        let tags = name.substring(core.length).split(".");
+        this.tags_ = tags;
+        return this.tags_;
     }
     get name() {
         return this.group.name;
