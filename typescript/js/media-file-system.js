@@ -72,7 +72,7 @@ function mergedItems(containers) {
 const categories = [
     { extensions: ["m4a"], kind: "audio", isLeader: true },
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
-    { extensions: ["text"], kind: "text", isLeader: false },
+    { extensions: ["txt"], kind: "text", isLeader: false },
     { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
     { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
 ];
@@ -179,7 +179,7 @@ class MFSItem {
         /*
         A follower's tags are the period-separated parts of its name that follow the leader's name.
         Otherwise, an item's tags are the period-separated pieces of text at the end of the name,
-        that do not contain spaces or start with digits.
+        that do not contain spaces, do not start with digits, and are not empty.
         */
         function parseTags(text) {
             let tags = text.split(".");
@@ -220,7 +220,14 @@ class MFSItem {
         return this.children_;
     }
     toJSON() {
-        return Object.assign(Object.assign({}, this.group), { children: this.children_ });
+        return {
+            name: this.name.name,
+            kind: this.kind,
+            extension: this.name.extension,
+            followers: this.followers.length ? this.followers : undefined,
+            tags: this.tags.length ? this.tags : undefined,
+        };
+        //return { ...this.group, kind: this.kind, children: this.children_ };
     }
 }
 //# sourceMappingURL=media-file-system.js.map

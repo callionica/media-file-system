@@ -160,7 +160,7 @@ interface Category {
 const categories: Category[] = [
     { extensions: ["m4a"], kind: "audio", isLeader: true },
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
-    { extensions: ["text"], kind: "text", isLeader: false },
+    { extensions: ["txt"], kind: "text", isLeader: false },
     { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
     { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
 ];
@@ -340,6 +340,13 @@ class MFSItem {
     }
 
     toJSON() {
-        return { ...this.group, children: this.children_ };
+        return {
+            name: this.name.name,
+            kind: this.kind,
+            extension: this.name.extension,
+            followers: this.followers.length ? this.followers : undefined,
+            tags: this.tags.length ? this.tags : undefined,
+        };
+        //return { ...this.group, kind: this.kind, children: this.children_ };
     }
 }
