@@ -294,7 +294,7 @@ class MFSItem {
         /*
         A follower's tags are the period-separated parts of its name that follow the leader's name.
         Otherwise, an item's tags are the period-separated pieces of text at the end of the name,
-        that do not contain spaces or start with digits.
+        that do not contain spaces, do not start with digits, and are not empty.
         */
         function parseTags(text: string) {
             let tags = text.split(".");
@@ -302,8 +302,8 @@ class MFSItem {
             let i = tags.length - 1;
             let found = false;
             for (; i >= 1; --i) {
-                // It's not a tag if it starts with a digit or contains a space
-                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)/)) {
+                // It's not a tag if it starts with a digit or contains a space or is empty
+                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)|(?<empty>^$)/)) {
                     break;
                 } else {
                     found = true;
@@ -319,7 +319,8 @@ class MFSItem {
         }
         let name = this.name.name;
         let core = leader.name.name;
-        let tags = name.substring(core.length).split(".");
+        let remainder = name.substring(core.length);
+        let tags = remainder.split(".").filter(x => x !== "");
         this.tags_ = tags;
         return this.tags_;
     }

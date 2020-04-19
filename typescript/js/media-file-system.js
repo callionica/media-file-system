@@ -186,8 +186,8 @@ class MFSItem {
             let i = tags.length - 1;
             let found = false;
             for (; i >= 1; --i) {
-                // It's not a tag if it starts with a digit or contains a space
-                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)/)) {
+                // It's not a tag if it starts with a digit or contains a space or is empty
+                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)|(?<empty>^$)/)) {
                     break;
                 }
                 else {
@@ -202,7 +202,8 @@ class MFSItem {
         }
         let name = this.name.name;
         let core = leader.name.name;
-        let tags = name.substring(core.length).split(".");
+        let remainder = name.substring(core.length);
+        let tags = remainder.split(".").filter(x => x !== "");
         this.tags_ = tags;
         return this.tags_;
     }
