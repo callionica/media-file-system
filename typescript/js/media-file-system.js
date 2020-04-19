@@ -88,10 +88,13 @@ function category(name) {
     }
     return defaultCategory;
 }
-function isLeaderFollower(leader, follower) {
+function isLeaderFollower_(leader, follower) {
     let l = leader.name + ".";
     let f = follower.name + ".";
     return f.startsWith(l);
+}
+function isLeaderFollower(leader, follower) {
+    return leader.isLeader && !follower.isLeader && isLeaderFollower_(leader.name, follower.name);
 }
 class MFSItem {
     constructor(group, parent) {
@@ -109,11 +112,12 @@ class MFSItem {
         this.followers_ = undefined;
         this.tags_ = undefined;
     }
+    // The children of the parent excluding this item
     get siblings() {
         if (this.parent === undefined) {
             return [];
         }
-        return this.parent.children;
+        return this.parent.children.filter(child => child !== this);
     }
     get kind() {
         return this.category_.kind;
@@ -133,11 +137,11 @@ class MFSItem {
         else {
             let result = [];
             if (this.parent !== undefined) {
-                if (isLeaderFollower(this.parent.name, this.name)) {
+                if (isLeaderFollower(this.parent, this)) {
                     result.push(this.parent);
                 }
                 for (let sibling of this.siblings) {
-                    if (isLeaderFollower(sibling.name, this.name)) {
+                    if (isLeaderFollower(sibling, this)) {
                         result.push(sibling);
                     }
                 }
@@ -158,12 +162,12 @@ class MFSItem {
         else {
             let result = [];
             for (let sibling of this.siblings) {
-                if (isLeaderFollower(this.name, sibling.name)) {
+                if (isLeaderFollower(this, sibling)) {
                     result.push(sibling);
                 }
             }
             for (let child of this.children) {
-                if (isLeaderFollower(this.name, child.name)) {
+                if (isLeaderFollower(this, child)) {
                     result.push(child);
                 }
             }
@@ -171,14 +175,30 @@ class MFSItem {
         }
         return this.followers_;
     }
-    // Only followers have tags
     get tags() {
-        if (this.isLeader) {
-            return [];
+        /*
+        A follower's tags are the period-separated parts of its name that follow the leader's name.
+        Otherwise, an item's tags are the period-separated pieces of text at the end of the name,
+        that do not contain spaces or start with digits.
+        */
+        function parseTags(text) {
+            let tags = text.split(".");
+            let i = tags.length - 1;
+            let found = false;
+            for (; i >= 1; --i) {
+                // It's not a tag if it starts with a digit or contains a space
+                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)/)) {
+                    break;
+                }
+                else {
+                    found = true;
+                }
+            }
+            return found ? tags.slice(i + 1) : [];
         }
         let leader = this.leaders[0];
         if (leader === undefined) {
-            return [];
+            return parseTags(this.name.name);
         }
         let name = this.name.name;
         let core = leader.name.name;
