@@ -57,6 +57,8 @@ interface FS {
 
     // Does a file system item represent a folder
     isFolderItem(item: FSItem): boolean;
+
+    read(item: FSItem): string;
 }
 
 declare let ObjC: any;
@@ -152,7 +154,21 @@ let FS: FS = (function () {
         return o.map(url => item(url.absoluteString.js));
     }
 
-    return { item, children, name, isFolder, isFolderItem };
+    function read(item: FSItem): string {
+        let fileURL = $.NSURL.URLWithString(item.targetURL || item.url); // NSURL
+        let path = fileURL.path; // NSString
+        let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
+        let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
+        }
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
+        }
+        return contents.js;
+    };
+
+    return { item, children, name, isFolder, isFolderItem, read };
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,9 +203,14 @@ let FSExpanded = (function(){
         let target = FS.name(targetURL);
     
         if (target.extension === "junction") {
+            // TODO - error handling!
             // The target is (probably) a junction so now we can get multiple targets
-            // TODO
-            return item;
+            let data = FS.read(item);
+            let targetURLs = data.split("\n").map(url => {
+                let item = FS.item(url); // Change this if we want junctions to refer to junctions
+                return item.targetURL || item.url;
+            });
+            return { ...item, targetURLs };
         }
     
         // If the target is not a junction, return the existing item
@@ -197,12 +218,17 @@ let FSExpanded = (function(){
         return item;
     }
 
+    function item(path: FSURL | FSPath) : FSExpandedItem {
+        let item = FS.item(path);
+        return toFSExpandedItem(item);
+    }
+
     function children(item: FSExpandedItem): FSExpandedItem[] {
         let items = toFSItems(item);
         return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
     }
 
-    return { children };
+    return { item, children };
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,6 +240,16 @@ interface FSNamedItem {
 }
 
 let FSNamed = (function(){
+
+    function toFSNamedItem(item: FSExpandedItem) {
+        return { name: FS.name(item.url), items: [item] };
+    }
+
+    function item(path: FSURL | FSPath) : FSNamedItem {
+        let item = FSExpanded.item(path);
+        return toFSNamedItem(item);
+    }
+
     // Get all the items contained in a set of folders and group them by name.
     // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
     // and /Disk2/folderA/folderB/ to contribute files to the same tree.
@@ -235,7 +271,7 @@ let FSNamed = (function(){
         return result;
     }
 
-    return { children };
+    return { item, children };
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,6 +285,7 @@ interface Category {
 }
 
 const categories: Category[] = [
+    { extensions: ["junction"], kind: "folder", isLeader: true },
     { extensions: ["m4a"], kind: "audio", isLeader: true },
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
     { extensions: ["txt"], kind: "text", isLeader: false },
@@ -256,7 +293,7 @@ const categories: Category[] = [
     { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
 ];
 
-const folderCategory: Category = { extensions: [], kind: "folder", isLeader: true };
+const folderCategory: Category = categories[0];
 const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false };
 
 function category(name: FSName): Category {
@@ -290,6 +327,10 @@ class MFSItem {
     leaders_?: MFSItem[];
     followers_?: MFSItem[];
     tags_?: string[];
+
+    static item(path: FSURL | FSPath, parent?: MFSItem) : MFSItem {
+        return new MFSItem(FSNamed.item(path), parent);
+    }
 
     constructor(namedItem: FSNamedItem, parent?: MFSItem) {
         this.namedItem = namedItem;

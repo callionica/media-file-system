@@ -71,7 +71,21 @@ let FS = (function () {
         let o = e.allObjects.js;
         return o.map(url => item(url.absoluteString.js));
     }
-    return { item, children, name, isFolder, isFolderItem };
+    function read(item) {
+        let fileURL = $.NSURL.URLWithString(item.targetURL || item.url); // NSURL
+        let path = fileURL.path; // NSString
+        let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
+        let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
+        }
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
+        }
+        return contents.js;
+    }
+    ;
+    return { item, children, name, isFolder, isFolderItem, read };
 })();
 let FSExpanded = (function () {
     // Convert an expanded item into a collection of standard items
@@ -89,21 +103,37 @@ let FSExpanded = (function () {
         let targetURL = item.targetURL || item.url;
         let target = FS.name(targetURL);
         if (target.extension === "junction") {
+            // TODO - error handling!
             // The target is (probably) a junction so now we can get multiple targets
-            // TODO
-            return item;
+            let data = FS.read(item);
+            let targetURLs = data.split("\n").map(url => {
+                let item = FS.item(url); // Change this if we want junctions to refer to junctions
+                return item.targetURL || item.url;
+            });
+            return Object.assign(Object.assign({}, item), { targetURLs });
         }
         // If the target is not a junction, return the existing item
         // FSItem and FSExpandedItem are compatible
         return item;
     }
+    function item(path) {
+        let item = FS.item(path);
+        return toFSExpandedItem(item);
+    }
     function children(item) {
         let items = toFSItems(item);
         return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
     }
-    return { children };
+    return { item, children };
 })();
 let FSNamed = (function () {
+    function toFSNamedItem(item) {
+        return { name: FS.name(item.url), items: [item] };
+    }
+    function item(path) {
+        let item = FSExpanded.item(path);
+        return toFSNamedItem(item);
+    }
     // Get all the items contained in a set of folders and group them by name.
     // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
     // and /Disk2/folderA/folderB/ to contribute files to the same tree.
@@ -123,16 +153,17 @@ let FSNamed = (function () {
         }
         return result;
     }
-    return { children };
+    return { item, children };
 })();
 const categories = [
+    { extensions: ["junction"], kind: "folder", isLeader: true },
     { extensions: ["m4a"], kind: "audio", isLeader: true },
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
     { extensions: ["txt"], kind: "text", isLeader: false },
     { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
     { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
 ];
-const folderCategory = { extensions: [], kind: "folder", isLeader: true };
+const folderCategory = categories[0];
 const defaultCategory = { extensions: [], kind: "unknown", isLeader: false };
 function category(name) {
     if (name.extension !== undefined) {
@@ -161,6 +192,9 @@ class MFSItem {
             this.parent = parent;
             // Note that parent.children is not usable during construction
         }
+    }
+    static item(path, parent) {
+        return new MFSItem(FSNamed.item(path), parent);
     }
     refresh() {
         this.children_ = undefined;
