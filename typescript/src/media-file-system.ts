@@ -1,5 +1,23 @@
 // ALL RIGHTS RESERVED
 
+// Polyfills
+// import 'ts-polyfill/lib/es2019-array';
+
+if (!Array.prototype.flatMap) {
+
+    function flatMap(this: any, fn: any) {
+        let nonFlat = this.map(fn);
+        return nonFlat.reduce((p: any[], n: any[]) => {
+            p.push(...n);
+            return p;
+        }, []);
+    }
+
+    Array.prototype.flatMap = flatMap as any;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 // FSPath is a unix-style file system path
 type FSPath = string;
 
@@ -29,7 +47,7 @@ interface FS {
     // Get the items contained in a folder or linked folder
     // Does not fail for non-existent items
     // Does not fail for non-folders
-    items(container: FSItem): FSItem[];
+    children(container: FSItem): FSItem[];
 
     // Get the name and optional extension from a file system URL
     name(url: FSURL): FSName;
@@ -108,7 +126,7 @@ let FS: FS = (function () {
         return (url === targetURL) ? { url } : { url, targetURL };
     }
 
-    function items(container: FSItem): FSItem[] {
+    function children(container: FSItem): FSItem[] {
         let directoryURL = $.NSURL.URLWithString(container.targetURL || container.url);
         let keys = $();
         let e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
@@ -117,35 +135,91 @@ let FS: FS = (function () {
         return o.map(url => item(url.absoluteString.js));
     }
 
-    return { item, items, name, isFolder, isFolderItem };
+    return { item, children, name, isFolder, isFolderItem };
 })();
 
-// A collection of FSItems with the same name
-interface FSGroup {
-    name: FSName;
-    items: FSItem[];
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// The standard file system allows links from one URL to another
+// The expanded file system allows links from one URL to multiple others
+// We make FSExpandedItem compatible with FSItem to avoid creating new objects
+// so we have both targetURL? and targetURLs? properties
+interface FSExpandedItem {
+    url: FSURL;
+    targetURL?: FSURL;
+    targetURLs?: FSURL[];
 }
 
-// Get all the items contained in a set of folders and group them by name.
-// Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
-// and /Disk2/folderA/folderB/ to contribute files to the same tree.
-function mergedItems(containers: FSItem[]): FSGroup[] {
-    let result: FSGroup[] = [];
-    for (let container of containers) {
-        let items = FS.items(container);
-        for (let item of items) {
-            let name = FS.name(item.url);
-            let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
-            if (existing === undefined) {
-                existing = { name, items: [item] };
-                result.push(existing);
-            } else {
-                existing.items.push(item);
+let FSExpanded = (function(){
+    
+    // Convert an expanded item into a collection of standard items
+    function toFSItems(item: FSExpandedItem): FSItem[] {
+        if (item.targetURLs !== undefined) {
+            return item.targetURLs.map(targetURL => {
+                return { url: item.url, targetURL };
+            });
+        }
+
+        return [item];
+    }
+
+    // Convert a standard item into an expanded item (by reading junction files if necessary)
+    function toFSExpandedItem(item: FSItem) : FSExpandedItem {
+        // Get the target
+        let targetURL = item.targetURL || item.url;
+        let target = FS.name(targetURL);
+    
+        if (target.extension === "junction") {
+            // The target is (probably) a junction so now we can get multiple targets
+            // TODO
+            return item;
+        }
+    
+        // If the target is not a junction, return the existing item
+        // FSItem and FSExpandedItem are compatible
+        return item;
+    }
+
+    function children(item: FSExpandedItem): FSExpandedItem[] {
+        let items = toFSItems(item);
+        return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
+    }
+
+    return { children };
+})();
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// A collection of items with the same name
+interface FSNamedItem {
+    name: FSName;
+    items: FSExpandedItem[];
+}
+
+let FSNamed = (function(){
+    // Get all the items contained in a set of folders and group them by name.
+    // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
+    // and /Disk2/folderA/folderB/ to contribute files to the same tree.
+    function children(container: FSNamedItem): FSNamedItem[] {
+
+        let result: FSNamedItem[] = [];
+        for (let item of container.items) {
+            let children = FSExpanded.children(item);
+            for (let child of children) {
+                let name = FS.name(child.url);
+                let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
+                if (existing === undefined) {
+                    existing = { name, items: [] };
+                    result.push(existing);
+                }
+                existing.items.push(child);
             }
         }
+        return result;
     }
-    return result;
-}
+
+    return { children };
+})();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -190,7 +264,7 @@ function isLeaderFollower(leader: MFSItem, follower: MFSItem): boolean {
 }
 
 class MFSItem {
-    group: FSGroup;
+    namedItem: FSNamedItem;
     category_: Category;
     // An item can be a folder and not-a-folder at the same time
     isFolder: boolean;
@@ -200,10 +274,10 @@ class MFSItem {
     followers_?: MFSItem[];
     tags_?: string[];
 
-    constructor(group: FSGroup, parent?: MFSItem) {
-        this.group = group;
-        this.isFolder = group.items.some(FS.isFolderItem);
-        this.category_ = this.isFolder ? folderCategory : category(group.name);
+    constructor(namedItem: FSNamedItem, parent?: MFSItem) {
+        this.namedItem = namedItem;
+        this.isFolder = namedItem.items.some(FS.isFolderItem);
+        this.category_ = this.isFolder ? folderCategory : category(namedItem.name);
 
         if (parent !== undefined) {
             this.parent = parent;
@@ -326,12 +400,12 @@ class MFSItem {
     }
 
     get name(): FSName {
-        return this.group.name;
+        return this.namedItem.name;
     }
 
     get children(): MFSItem[] {
         if (this.children_ === undefined) {
-            let groups = mergedItems(this.group.items);
+            let groups = FSNamed.children(this.namedItem);
             this.children_ = groups.map(group => new MFSItem(group, this));
             // TODO - add virtual leaders here, generated from parsing names
             // parse name, if !item.exists, create virtual 

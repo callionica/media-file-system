@@ -1,5 +1,17 @@
 "use strict";
 // ALL RIGHTS RESERVED
+// Polyfills
+//import 'ts-polyfill/lib/es2019-array';
+if (!Array.prototype.flatMap) {
+    function flatMap(fn) {
+        let nonFlat = this.map(fn);
+        return nonFlat.reduce((p, n) => {
+            p.push(...n);
+            return p;
+        }, []);
+    }
+    Array.prototype.flatMap = flatMap;
+}
 let FS = (function () {
     const separator = "/";
     function isFolder(url) {
@@ -39,36 +51,67 @@ let FS = (function () {
         let targetURL = nsurl.URLByResolvingSymlinksInPath.absoluteString.js;
         return (url === targetURL) ? { url } : { url, targetURL };
     }
-    function items(container) {
+    function children(container) {
         let directoryURL = $.NSURL.URLWithString(container.targetURL || container.url);
         let keys = $();
         let e = $.NSFileManager.defaultManager.enumeratorAtURLIncludingPropertiesForKeysOptionsErrorHandler(directoryURL, keys, NSDirectoryEnumerationSkipsSubdirectoryDescendants | NSDirectoryEnumerationSkipsHiddenFiles, null);
         let o = e.allObjects.js;
         return o.map(url => item(url.absoluteString.js));
     }
-    return { item, items, name, isFolder, isFolderItem };
+    return { item, children, name, isFolder, isFolderItem };
 })();
-// Get all the items contained in a set of folders and group them by name.
-// Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
-// and /Disk2/folderA/folderB/ to contribute files to the same tree.
-function mergedItems(containers) {
-    let result = [];
-    for (let container of containers) {
-        let items = FS.items(container);
-        for (let item of items) {
-            let name = FS.name(item.url);
-            let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
-            if (existing === undefined) {
-                existing = { name, items: [item] };
-                result.push(existing);
-            }
-            else {
-                existing.items.push(item);
+let FSExpanded = (function () {
+    // Convert an expanded item into a collection of standard items
+    function toFSItems(item) {
+        if (item.targetURLs !== undefined) {
+            return item.targetURLs.map(targetURL => {
+                return { url: item.url, targetURL };
+            });
+        }
+        return [item];
+    }
+    // Convert a standard item into an expanded item (by reading junction files if necessary)
+    function toFSExpandedItem(item) {
+        // Get the target
+        let targetURL = item.targetURL || item.url;
+        let target = FS.name(targetURL);
+        if (target.extension === "junction") {
+            // The target is (probably) a junction so now we can get multiple targets
+            // TODO
+            return item;
+        }
+        // If the target is not a junction, return the existing item
+        // FSItem and FSExpandedItem are compatible
+        return item;
+    }
+    function children(item) {
+        let items = toFSItems(item);
+        return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
+    }
+    return { children };
+})();
+let FSNamed = (function () {
+    // Get all the items contained in a set of folders and group them by name.
+    // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
+    // and /Disk2/folderA/folderB/ to contribute files to the same tree.
+    function children(container) {
+        let result = [];
+        for (let item of container.items) {
+            let children = FSExpanded.children(item);
+            for (let child of children) {
+                let name = FS.name(child.url);
+                let existing = result.find(e => (e.name.name === name.name) && (e.name.extension === name.extension));
+                if (existing === undefined) {
+                    existing = { name, items: [] };
+                    result.push(existing);
+                }
+                existing.items.push(child);
             }
         }
+        return result;
     }
-    return result;
-}
+    return { children };
+})();
 const categories = [
     { extensions: ["m4a"], kind: "audio", isLeader: true },
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
@@ -97,10 +140,10 @@ function isLeaderFollower(leader, follower) {
     return leader.isLeader && !follower.isLeader && isLeaderFollower_(leader.name, follower.name);
 }
 class MFSItem {
-    constructor(group, parent) {
-        this.group = group;
-        this.isFolder = group.items.some(FS.isFolderItem);
-        this.category_ = this.isFolder ? folderCategory : category(group.name);
+    constructor(namedItem, parent) {
+        this.namedItem = namedItem;
+        this.isFolder = namedItem.items.some(FS.isFolderItem);
+        this.category_ = this.isFolder ? folderCategory : category(namedItem.name);
         if (parent !== undefined) {
             this.parent = parent;
             // Note that parent.children is not usable during construction
@@ -208,11 +251,11 @@ class MFSItem {
         return this.tags_;
     }
     get name() {
-        return this.group.name;
+        return this.namedItem.name;
     }
     get children() {
         if (this.children_ === undefined) {
-            let groups = mergedItems(this.group.items);
+            let groups = FSNamed.children(this.namedItem);
             this.children_ = groups.map(group => new MFSItem(group, this));
             // TODO - add virtual leaders here, generated from parsing names
             // parse name, if !item.exists, create virtual 

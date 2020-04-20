@@ -2,6 +2,9 @@
   "compilerOptions": {
     "incremental": true,
     "target": "ES2016",
+    "lib": [
+      "es2019"
+    ],
     "module": "es2015",
     "sourceMap": true,
     "outDir": "./js/",
