@@ -185,6 +185,10 @@ interface FSExpandedItem {
 
 let FSExpanded = (function(){
     
+    function isFolderItem(item: FSExpandedItem): boolean {
+        return (FS.isFolderItem(item) || ((item.targetURLs !== undefined) && item.targetURLs.some(FS.isFolder)));
+    }
+
     // Convert an expanded item into a collection of standard items
     function toFSItems(item: FSExpandedItem): FSItem[] {
         if (item.targetURLs !== undefined) {
@@ -228,7 +232,7 @@ let FSExpanded = (function(){
         return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
     }
 
-    return { item, children };
+    return { isFolderItem, item, children };
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,6 +244,10 @@ interface FSNamedItem {
 }
 
 let FSNamed = (function(){
+
+    function isFolderItem(item: FSNamedItem): boolean {
+        return item.items.some(FSExpanded.isFolderItem);
+    }
 
     function toFSNamedItem(item: FSExpandedItem) {
         return { name: FS.name(item.url), items: [item] };
@@ -271,7 +279,7 @@ let FSNamed = (function(){
         return result;
     }
 
-    return { item, children };
+    return { isFolderItem, item, children };
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -334,7 +342,7 @@ class MFSItem {
 
     constructor(namedItem: FSNamedItem, parent?: MFSItem) {
         this.namedItem = namedItem;
-        this.isFolder = namedItem.items.some(FS.isFolderItem);
+        this.isFolder = FSNamed.isFolderItem(namedItem);
         this.category_ = this.isFolder ? folderCategory : category(namedItem.name);
 
         if (parent !== undefined) {

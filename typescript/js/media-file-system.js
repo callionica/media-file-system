@@ -88,6 +88,9 @@ let FS = (function () {
     return { item, children, name, isFolder, isFolderItem, read };
 })();
 let FSExpanded = (function () {
+    function isFolderItem(item) {
+        return (FS.isFolderItem(item) || ((item.targetURLs !== undefined) && item.targetURLs.some(FS.isFolder)));
+    }
     // Convert an expanded item into a collection of standard items
     function toFSItems(item) {
         if (item.targetURLs !== undefined) {
@@ -124,9 +127,12 @@ let FSExpanded = (function () {
         let items = toFSItems(item);
         return items.flatMap(item => FS.children(item).map(item => toFSExpandedItem(item)));
     }
-    return { item, children };
+    return { isFolderItem, item, children };
 })();
 let FSNamed = (function () {
+    function isFolderItem(item) {
+        return item.items.some(FSExpanded.isFolderItem);
+    }
     function toFSNamedItem(item) {
         return { name: FS.name(item.url), items: [item] };
     }
@@ -153,7 +159,7 @@ let FSNamed = (function () {
         }
         return result;
     }
-    return { item, children };
+    return { isFolderItem, item, children };
 })();
 const categories = [
     { extensions: ["junction"], kind: "folder", isLeader: true },
@@ -186,7 +192,7 @@ function isLeaderFollower(leader, follower) {
 class MFSItem {
     constructor(namedItem, parent) {
         this.namedItem = namedItem;
-        this.isFolder = namedItem.items.some(FS.isFolderItem);
+        this.isFolder = FSNamed.isFolderItem(namedItem);
         this.category_ = this.isFolder ? folderCategory : category(namedItem.name);
         if (parent !== undefined) {
             this.parent = parent;
