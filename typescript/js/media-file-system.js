@@ -1,7 +1,7 @@
 "use strict";
 // ALL RIGHTS RESERVED
 // Polyfills
-//import 'ts-polyfill/lib/es2019-array';
+// import 'ts-polyfill/lib/es2019-array';
 if (!Array.prototype.flatMap) {
     function flatMap(fn) {
         let nonFlat = this.map(fn);
@@ -23,7 +23,20 @@ let FS = (function () {
     function isFSURL(path) {
         return path.startsWith("file:");
     }
+    let extensions = [];
+    const extensionsMaximumLength = 1000;
     function name(url) {
+        // Extensions are shared by many files, so cache and reuse them to reduce memory
+        function cache(extension) {
+            let found = extensions.find(ext => ext === extension);
+            if (found) {
+                return found;
+            }
+            if (extensions.length < extensionsMaximumLength) {
+                extensions.push(extension);
+            }
+            return extension;
+        }
         let last = url.endsWith(separator) ? url.length - 2 : url.length - 1;
         let slashIndex = url.lastIndexOf(separator, last);
         let name = decodeURIComponent(url.substring(slashIndex + 1, last + 1));
@@ -32,7 +45,7 @@ let FS = (function () {
         if (dotIndex >= 0) {
             return {
                 name: name.substring(0, dotIndex),
-                extension: name.substring(dotIndex + 1)
+                extension: cache(name.substring(dotIndex + 1))
             };
         }
         return { name };
@@ -255,14 +268,15 @@ class MFSItem {
     }
     get children() {
         if (this.children_ === undefined) {
-            let groups = FSNamed.children(this.namedItem);
-            this.children_ = groups.map(group => new MFSItem(group, this));
+            let children = FSNamed.children(this.namedItem);
+            this.children_ = children.map(child => new MFSItem(child, this));
             // TODO - add virtual leaders here, generated from parsing names
             // parse name, if !item.exists, create virtual 
         }
         return this.children_;
     }
     toJSON() {
+        // TODO
         return {
             name: this.name.name,
             kind: this.kind,

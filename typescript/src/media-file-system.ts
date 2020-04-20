@@ -77,7 +77,24 @@ let FS: FS = (function () {
         return path.startsWith("file:");
     }
 
+    let extensions: string[] = [];
+    const extensionsMaximumLength = 1000;
+
     function name(url: FSURL): FSName {
+
+        // Extensions are shared by many files, so cache and reuse them to reduce memory
+        function cache(extension: string): string {
+            let found = extensions.find(ext => ext === extension);
+            if (found) {
+                return found;
+            }
+
+            if (extensions.length < extensionsMaximumLength) {
+                extensions.push(extension);
+            }
+
+            return extension;
+        }
 
         let last = url.endsWith(separator) ? url.length - 2 : url.length - 1;
         let slashIndex = url.lastIndexOf(separator, last);
@@ -88,7 +105,7 @@ let FS: FS = (function () {
         if (dotIndex >= 0) {
             return {
                 name: name.substring(0, dotIndex),
-                extension: name.substring(dotIndex + 1)
+                extension: cache(name.substring(dotIndex + 1))
             };
         }
 
@@ -405,8 +422,8 @@ class MFSItem {
 
     get children(): MFSItem[] {
         if (this.children_ === undefined) {
-            let groups = FSNamed.children(this.namedItem);
-            this.children_ = groups.map(group => new MFSItem(group, this));
+            let children = FSNamed.children(this.namedItem);
+            this.children_ = children.map(child => new MFSItem(child, this));
             // TODO - add virtual leaders here, generated from parsing names
             // parse name, if !item.exists, create virtual 
         }
@@ -414,6 +431,7 @@ class MFSItem {
     }
 
     toJSON() {
+        // TODO
         return {
             name: this.name.name,
             kind: this.kind,
