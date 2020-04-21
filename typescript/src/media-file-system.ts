@@ -237,6 +237,16 @@ let FSExpanded = (function(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+// FSExtended allows a single URL to link to multiple URLs (a single item becomes multiple items)
+// FSNamed groups multiple URLs under a single name (multiple items become a single item)
+// Both of these features are needed to allow parallel directory trees to be merged
+// Given:
+// /Disk1/folderX/folderY
+// /Disk2/folderX/folderY
+// We use a junction for folderX to merge the trees
+// while FSNamed.children makes the multiple folderY's 
+// that appear as children of the junction naturally look like a single child.
+
 // A collection of items with the same name
 interface FSNamedItem {
     name: FSName;
@@ -258,9 +268,6 @@ let FSNamed = (function(){
         return toFSNamedItem(item);
     }
 
-    // Get all the items contained in a set of folders and group them by name.
-    // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
-    // and /Disk2/folderA/folderB/ to contribute files to the same tree.
     function children(container: FSNamedItem): FSNamedItem[] {
 
         let result: FSNamedItem[] = [];
@@ -283,6 +290,11 @@ let FSNamed = (function(){
 })();
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+const formatters = [
+    { name: "Group - 01-01 Name", formatter: (x: any) => `${x.group} - ${x.subgroup}-${x.number} ${x.name}` },
+];
 
 type CategoryKind = "audio" | "video" | "text" | "image" | "subtitle" | "folder" | "unknown";
 
