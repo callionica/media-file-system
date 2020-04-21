@@ -1,5 +1,30 @@
-# Callionica Media File System
+# Callionica Media File System (WIP)
 
+## Views on a Filename
+There are multiple representations of a filename:
+
+1. Name-Extension: the classic view of a filename
+2. Name-Tags-Extension: period-separated tags at the end of the name
+3. Leader-Tags-Extension: the first part of the name matches the name of another file
+(since the leader may have tags, the tags are only the ones not part of the leader's name)
+4. Properties-Tags-Extension: the filename can be parsed to produce name-value pairs
+If we want to change a property and retain non-property formatting, we need a formatter
+
+
+
+## Goals
+With this structure:
+
+```
+Home Videos/
+  Home Videos - 2018-02-04 Hawaii Vacation.mp4
+```
+
+1. Renaming the folder should rename the file.
+2. Adding a file should prefix the folder name to the file name
+3. The view should hide the file prefix
+
+## Work in progress
 The "Callionica Media File System" (**CMFS**) is a set of rules for connecting multiple files into 
 a single entity, so that separate audio, video, text, subtitle, and image files can all be treated
 as one item.

@@ -183,8 +183,8 @@ interface FSExpandedItem {
     targetURLs?: FSURL[];
 }
 
-let FSExpanded = (function(){
-    
+let FSExpanded = (function () {
+
     function isFolderItem(item: FSExpandedItem): boolean {
         return (FS.isFolderItem(item) || ((item.targetURLs !== undefined) && item.targetURLs.some(FS.isFolder)));
     }
@@ -201,11 +201,11 @@ let FSExpanded = (function(){
     }
 
     // Convert a standard item into an expanded item (by reading junction files if necessary)
-    function toFSExpandedItem(item: FSItem) : FSExpandedItem {
+    function toFSExpandedItem(item: FSItem): FSExpandedItem {
         // Get the target
         let targetURL = item.targetURL || item.url;
         let target = FS.name(targetURL);
-    
+
         if (target.extension === "junction") {
             // TODO - error handling!
             // The target is (probably) a junction so now we can get multiple targets
@@ -216,13 +216,13 @@ let FSExpanded = (function(){
             });
             return { ...item, targetURLs };
         }
-    
+
         // If the target is not a junction, return the existing item
         // FSItem and FSExpandedItem are compatible
         return item;
     }
 
-    function item(path: FSURL | FSPath) : FSExpandedItem {
+    function item(path: FSURL | FSPath): FSExpandedItem {
         let item = FS.item(path);
         return toFSExpandedItem(item);
     }
@@ -253,7 +253,7 @@ interface FSNamedItem {
     items: FSExpandedItem[];
 }
 
-let FSNamed = (function(){
+let FSNamed = (function () {
 
     function isFolderItem(item: FSNamedItem): boolean {
         return item.items.some(FSExpanded.isFolderItem);
@@ -263,7 +263,7 @@ let FSNamed = (function(){
         return { name: FS.name(item.url), items: [item] };
     }
 
-    function item(path: FSURL | FSPath) : FSNamedItem {
+    function item(path: FSURL | FSPath): FSNamedItem {
         let item = FSExpanded.item(path);
         return toFSNamedItem(item);
     }
@@ -291,9 +291,43 @@ let FSNamed = (function(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 const formatters = [
     { name: "Group - 01-01 Name", formatter: (x: any) => `${x.group} - ${x.subgroup}-${x.number} ${x.name}` },
+];
+
+interface Data {
+    name?: string; // Track name, Episode name
+
+    group?: string; // Artist, Show
+    subgroup?: string; // Album, Season
+
+    number?: string;  // Track number, episode number
+
+    year?: string;
+    month?: string;
+    day?: string;
+}
+
+function parseData(text: string, possibles: RegExp[]): Data {
+    let match;
+    for (var possible of possibles) {
+        match = possible.exec(text);
+        if (match) {
+            break;
+        }
+    }
+
+    return match ? { ...match.groups } : {};
+}
+
+let possibles = [
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>Episode (?<number>\d{1,4}))$/i,
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (Episode )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<subgroup>\d{1,4})-(?<number>\d{1,4})\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<name>Episode (?<number>\d{1,4}))$/i,
 ];
 
 type CategoryKind = "audio" | "video" | "text" | "image" | "subtitle" | "folder" | "unknown";
@@ -302,19 +336,20 @@ interface Category {
     extensions: string[];
     kind: CategoryKind;
     isLeader: boolean;
+    extractors: RegExp[];
 }
 
 const categories: Category[] = [
-    { extensions: ["junction"], kind: "folder", isLeader: true },
-    { extensions: ["m4a"], kind: "audio", isLeader: true },
-    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
-    { extensions: ["txt"], kind: "text", isLeader: false },
-    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
-    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
+    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: [] },
+    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: possibles },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: possibles },
+    { extensions: ["txt"], kind: "text", isLeader: false, extractors: [] },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: [] },
+    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false, extractors: [] },
 ];
 
 const folderCategory: Category = categories[0];
-const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false };
+const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false, extractors: [] };
 
 function category(name: FSName): Category {
     if (name.extension !== undefined) {
@@ -347,8 +382,9 @@ class MFSItem {
     leaders_?: MFSItem[];
     followers_?: MFSItem[];
     tags_?: string[];
+    data_?: Data;
 
-    static item(path: FSURL | FSPath, parent?: MFSItem) : MFSItem {
+    static item(path: FSURL | FSPath, parent?: MFSItem): MFSItem {
         return new MFSItem(FSNamed.item(path), parent);
     }
 
@@ -368,6 +404,7 @@ class MFSItem {
         this.leaders_ = undefined;
         this.followers_ = undefined;
         this.tags_ = undefined;
+        this.data_ = undefined;
     }
 
     // The children of the parent excluding this item
@@ -489,6 +526,14 @@ class MFSItem {
             // parse name, if !item.exists, create virtual 
         }
         return this.children_;
+    }
+
+    get data() : Data {
+        if (this.data_ === undefined) {
+            // TODO - exclude tags from name
+            this.data_ = parseData(this.name.name, this.category_.extractors);
+        }
+        return this.data_;
     }
 
     toJSON() {

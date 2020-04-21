@@ -140,9 +140,6 @@ let FSNamed = (function () {
         let item = FSExpanded.item(path);
         return toFSNamedItem(item);
     }
-    // Get all the items contained in a set of folders and group them by name.
-    // Imagine parallel folder layouts where we want /Disk1/folderA/folderB/
-    // and /Disk2/folderA/folderB/ to contribute files to the same tree.
     function children(container) {
         let result = [];
         for (let item of container.items) {
@@ -161,16 +158,39 @@ let FSNamed = (function () {
     }
     return { isFolderItem, item, children };
 })();
+//////////////////////////////////////////////////////////////////////////////////////////////////
+const formatters = [
+    { name: "Group - 01-01 Name", formatter: (x) => `${x.group} - ${x.subgroup}-${x.number} ${x.name}` },
+];
+function parseData(text, possibles) {
+    let match;
+    for (var possible of possibles) {
+        match = possible.exec(text);
+        if (match) {
+            break;
+        }
+    }
+    return match ? Object.assign({}, match.groups) : {};
+}
+let possibles = [
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>Episode (?<number>\d{1,4}))$/i,
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (Episode )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<subgroup>\d{1,4})-(?<number>\d{1,4})\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?(?<name>Episode (?<number>\d{1,4}))$/i,
+];
 const categories = [
-    { extensions: ["junction"], kind: "folder", isLeader: true },
-    { extensions: ["m4a"], kind: "audio", isLeader: true },
-    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true },
-    { extensions: ["txt"], kind: "text", isLeader: false },
-    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false },
-    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false },
+    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: [] },
+    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: possibles },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: possibles },
+    { extensions: ["txt"], kind: "text", isLeader: false, extractors: [] },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: [] },
+    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false, extractors: [] },
 ];
 const folderCategory = categories[0];
-const defaultCategory = { extensions: [], kind: "unknown", isLeader: false };
+const defaultCategory = { extensions: [], kind: "unknown", isLeader: false, extractors: [] };
 function category(name) {
     if (name.extension !== undefined) {
         let ext = name.extension.toLowerCase();
@@ -207,6 +227,7 @@ class MFSItem {
         this.leaders_ = undefined;
         this.followers_ = undefined;
         this.tags_ = undefined;
+        this.data_ = undefined;
     }
     // The children of the parent excluding this item
     get siblings() {
@@ -314,6 +335,13 @@ class MFSItem {
             // parse name, if !item.exists, create virtual 
         }
         return this.children_;
+    }
+    get data() {
+        if (this.data_ === undefined) {
+            // TODO - exclude tags from name
+            this.data_ = parseData(this.name.name, this.category_.extractors);
+        }
+        return this.data_;
     }
     toJSON() {
         // TODO
