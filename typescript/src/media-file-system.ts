@@ -346,7 +346,14 @@ let possibles = (function () {
         if (patterns.length == 1) {
             return patterns[0];
         }
-        return `(?:${patterns.join("|")})?`;
+        return `(?:${patterns.join("|")})`;
+    }
+
+    // Named capture group
+    function cap(name: string) {
+        return function (...patterns: string[]) {
+            return `(?<${name}>${patterns.join("")})`;
+        }
     }
 
     let period = `[.]`;
@@ -369,7 +376,7 @@ let possibles = (function () {
             opt(group),
             season, ws, number("subgroup"),
             ws, separator, ws,
-            `(?<name>`, episode, ws, number("number"), `)`
+            cap("name")(episode, ws, number("number"))
         ),
         re(
             opt(group),
@@ -410,7 +417,7 @@ let possibles = (function () {
         ),
         re(
             opt(group),
-            `(?<name>`, episode, ws, number("number"), `)`
+            cap("name")(episode, ws, number("number"))
         ),
     ];
 

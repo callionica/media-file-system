@@ -192,7 +192,13 @@ let possibles = (function () {
         if (patterns.length == 1) {
             return patterns[0];
         }
-        return `(?:${patterns.join("|")})?`;
+        return `(?:${patterns.join("|")})`;
+    }
+    // Named capture group
+    function cap(name) {
+        return function (...patterns) {
+            return `(?<${name}>${patterns.join("")})`;
+        };
     }
     let period = `[.]`;
     let season = alt(`(?:Series)`, `(?:Season)`, `S`);
@@ -207,14 +213,14 @@ let possibles = (function () {
     let month = `(?<month>${digits(2)})`;
     let day = `(?<day>${digits(2)})`;
     return [
-        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, `(?<name>`, episode, ws, number("number"), `)`),
+        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, cap("name")(episode, ws, number("number"))),
         re(opt(group), season, ws, number("subgroup"), ws, separator, ws, opt(episode), number("number"), opt(period), opt(ws), name),
         re(opt(group), season, number("subgroup"), episode, number("number"), opt(opt(separator), episode, number("endNumber")), ws, separator, ws, name),
         re(opt(group), season, ws, number("subgroup"), ws, separator, ws, name),
         re(opt(group), year, separator, month, separator, day, ws, name),
         re(opt(group), number("subgroup"), separator, number("number"), ws, name),
         re(opt(group), number("number"), opt(period), opt(ws), name),
-        re(opt(group), `(?<name>`, episode, ws, number("number"), `)`),
+        re(opt(group), cap("name")(episode, ws, number("number"))),
     ];
 })();
 const categories = [
