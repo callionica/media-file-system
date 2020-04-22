@@ -187,6 +187,10 @@ let possibles = (function () {
         }
         return `(?:${patterns.join("")})?`;
     }
+    // Group multiple items
+    function grp(...patterns) {
+        return `(?:${patterns.join("")})`;
+    }
     // Group alternatives
     function alt(...patterns) {
         if (patterns.length == 1) {
@@ -201,13 +205,13 @@ let possibles = (function () {
         };
     }
     let period = `[.]`;
-    let season = alt(`(?:Series)`, `(?:Season)`, `S`);
-    let episode = alt(`(?:Episode)`, `(?:Ep[.]?)`, `E`);
+    let season = alt(`Series`, `Season`, `S`);
+    let episode = alt(`Episode`, `Ep[.]?`, `E`);
     let separator = `-`;
     let digits = (count) => `(?:\\d{${count}})`;
     let phrase = (capture) => `(?<${capture}>.{0,64}\\S)`;
     let number = (capture) => `(?<${capture}>\\d{1,4})`;
-    let group = ["(?:", phrase("group"), ws, separator, ws, ")"].join("");
+    let group = grp(phrase("group"), ws, separator, ws);
     let name = phrase("name");
     let year = `(?<year>${digits(4)})`;
     let month = `(?<month>${digits(2)})`;
