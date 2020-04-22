@@ -175,6 +175,7 @@ function parseData(text, possibles) {
 let possibles = [
     /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>Episode (?<number>\d{1,4}))$/i,
     /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (Episode )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
+    /^((?<group>.*) - )?s(?<subgroup>\d{1,4})e(?<number>\d{1,4})(-?e(?<endNumber>\d{1,4}))?( -)? (?<name>.*)$/i,
     /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>.*)$/i,
     /^((?<group>.*) - )?(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\s*(?<name>.*)$/i,
     /^((?<group>.*) - )?(?<subgroup>\d{1,4})-(?<number>\d{1,4})\s*(?<name>.*)$/i,
