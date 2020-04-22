@@ -172,16 +172,51 @@ function parseData(text, possibles) {
     }
     return match ? Object.assign({}, match.groups) : {};
 }
-let possibles = [
-    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>Episode (?<number>\d{1,4}))$/i,
-    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (Episode )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
-    /^((?<group>.*) - )?s(?<subgroup>\d{1,4})e(?<number>\d{1,4})(-?e(?<endNumber>\d{1,4}))?( -)? (?<name>.*)$/i,
-    /^((?<group>.*) - )?Series (?<subgroup>\d{1,4}) - (?<name>.*)$/i,
-    /^((?<group>.*) - )?(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\s*(?<name>.*)$/i,
-    /^((?<group>.*) - )?(?<subgroup>\d{1,4})-(?<number>\d{1,4})\s*(?<name>.*)$/i,
-    /^((?<group>.*) - )?(?<number>\d{1,4})[.]?\s*(?<name>.*)$/i,
-    /^((?<group>.*) - )?(?<name>Episode (?<number>\d{1,4}))$/i,
-];
+let possibles = (function () {
+    // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
+    let ws = `(?:\\s{1,4})`;
+    // Create a regular expression
+    function re(...patterns) {
+        // Anchor to start/end and allow (ignore) leading/trailing whitespace
+        return new RegExp(`^${ws}?` + patterns.join("") + `${ws}?$`, "i");
+    }
+    // Make some pieces of a regular expression optional
+    function opt(...patterns) {
+        if (patterns.length == 1) {
+            return patterns[0] + "?";
+        }
+        return `(?:${patterns.join("")})?`;
+    }
+    // Group alternatives
+    function alt(...patterns) {
+        if (patterns.length == 1) {
+            return patterns[0];
+        }
+        return `(?:${patterns.join("|")})?`;
+    }
+    let period = `[.]`;
+    let season = alt(`(?:Series)`, `(?:Season)`, `S`);
+    let episode = alt(`(?:Episode)`, `(?:Ep[.]?)`, `E`);
+    let separator = `-`;
+    let digits = (count) => `(?:\\d{${count}})`;
+    let phrase = (capture) => `(?<${capture}>.{0,64}\\S)`;
+    let number = (capture) => `(?<${capture}>\\d{1,4})`;
+    let group = ["(?:", phrase("group"), ws, separator, ws, ")"].join("");
+    let name = phrase("name");
+    let year = `(?<year>${digits(4)})`;
+    let month = `(?<month>${digits(2)})`;
+    let day = `(?<day>${digits(2)})`;
+    return [
+        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, `(?<name>`, episode, ws, number("number"), `)`),
+        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, opt(episode), number("number"), opt(period), opt(ws), name),
+        re(opt(group), season, number("subgroup"), episode, number("number"), opt(opt(separator), episode, number("endNumber")), ws, separator, ws, name),
+        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, name),
+        re(opt(group), year, separator, month, separator, day, ws, name),
+        re(opt(group), number("subgroup"), separator, number("number"), ws, name),
+        re(opt(group), number("number"), opt(period), opt(ws), name),
+        re(opt(group), `(?<name>`, episode, ws, number("number"), `)`),
+    ];
+})();
 const categories = [
     { extensions: ["junction"], kind: "folder", isLeader: true, extractors: [] },
     { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: possibles },
