@@ -174,6 +174,7 @@ function parseData(text, possibles) {
 }
 let possibles = (function () {
     // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
+    // Whitespace
     let ws = `(?:\\s{1,4})`;
     // Create a regular expression
     function re(...patterns) {
@@ -205,9 +206,9 @@ let possibles = (function () {
         };
     }
     let period = `[.]`;
+    let separator = `-`;
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
-    let separator = `-`;
     let digits = (count) => `(?:\\d{${count}})`;
     let phrase = (capture) => `(?<${capture}>.{0,64}\\S)`;
     let number = (capture) => `(?<${capture}>\\d{1,4})`;
@@ -255,6 +256,20 @@ function isLeaderFollower_(leader, follower) {
 function isLeaderFollower(leader, follower) {
     return leader.isLeader && !follower.isLeader && isLeaderFollower_(leader.name, follower.name);
 }
+function splitName(text) {
+    // A tag starts with a period, cannot contain spaces or periods,
+    // and the first character after the period (if there is one) is not a digit
+    // All valid tags appear at the end of the string
+    // The prefix before all the tags is the core name (excluding leading/trailing space)
+    let re = /^\s*(?<core>.*?)\s*(?<tags>(?<tag>[.](?=\D|$)[^\s.]*)*)$/;
+    let m = re.exec(text);
+    if (m) {
+        let g = m.groups;
+        return { core: g.core, tags: g.tags.split(".").filter(x => x !== "") };
+    }
+    // Don't ever expect to be here since the regex should always match
+    return { core: text, tags: [] };
+}
 class MFSItem {
     constructor(namedItem, parent) {
         this.namedItem = namedItem;
@@ -272,8 +287,9 @@ class MFSItem {
         this.children_ = undefined;
         this.leaders_ = undefined;
         this.followers_ = undefined;
-        this.tags_ = undefined;
         this.data_ = undefined;
+        this.mfsName_ = undefined;
+        this.extraTags_ = undefined;
     }
     // The children of the parent excluding this item
     get siblings() {
@@ -338,40 +354,33 @@ class MFSItem {
         }
         return this.followers_;
     }
-    get tags() {
-        /*
-        A follower's tags are the period-separated parts of its name that follow the leader's name.
-        Otherwise, an item's tags are the period-separated pieces of text at the end of the name,
-        that do not contain spaces, do not start with digits, and are not empty.
-        */
-        function parseTags(text) {
-            let tags = text.split(".");
-            let i = tags.length - 1;
-            let found = false;
-            for (; i >= 1; --i) {
-                // It's not a tag if it starts with a digit or contains a space or is empty
-                if (tags[i].match(/(?<digit>^\d)|(?<space>\s)|(?<empty>^$)/)) {
-                    break;
-                }
-                else {
-                    found = true;
-                }
-            }
-            return found ? tags.slice(i + 1) : [];
+    get name() {
+        return this.namedItem.name;
+    }
+    get coreName() {
+        if (this.mfsName_ === undefined) {
+            this.mfsName_ = splitName(this.name.name);
         }
+        return this.mfsName_.core;
+    }
+    get tags() {
+        if (this.mfsName_ === undefined) {
+            this.mfsName_ = splitName(this.name.name);
+        }
+        return this.mfsName_.tags;
+    }
+    // If this item follows a leader, return the extra tags
+    get extraTags() {
         let leader = this.leaders[0];
         if (leader === undefined) {
-            return parseTags(this.name.name);
+            return [];
         }
         let name = this.name.name;
         let core = leader.name.name;
         let remainder = name.substring(core.length);
         let tags = remainder.split(".").filter(x => x !== "");
-        this.tags_ = tags;
-        return this.tags_;
-    }
-    get name() {
-        return this.namedItem.name;
+        this.extraTags_ = tags;
+        return this.extraTags_;
     }
     get children() {
         if (this.children_ === undefined) {
