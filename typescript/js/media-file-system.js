@@ -407,6 +407,37 @@ class MFSItem {
         }
         return this.data_;
     }
+    get language() {
+        function tag2language(tag) {
+            let languageTag = tag.toLowerCase();
+            let data = [
+                ["en", "en-us", "en-gb", "english"],
+                ["da", "da-dk", "dansk", "dansk1", "dansk2", "kommentar", "non-dansk", "danish"],
+                ["de", "de-de", "deutsch", "german"],
+                ["no", "norsk", "norwegian"],
+                ["sv", "sv-se", "se", "svenska", "swedish"],
+                ["fr", "français", "francais", "french"],
+                ["es", "espagnol", "spanish"],
+            ];
+            let language;
+            data.some(function (alternateTags) {
+                if (alternateTags.indexOf(languageTag) >= 0) {
+                    language = alternateTags[0];
+                    return true;
+                }
+            });
+            return language;
+        }
+        function tags2language(tags) {
+            let language;
+            tags.some(tag => {
+                language = tag2language(tag);
+                return language;
+            });
+            return language || "en";
+        }
+        return tags2language(this.tags);
+    }
     toJSON() {
         // TODO
         return {
@@ -414,6 +445,7 @@ class MFSItem {
             kind: this.kind,
             extension: this.extension,
             tags: this.tags.length ? this.tags : undefined,
+            language: this.language,
             fileSystemName: this.fileSystemName,
             followers: this.followers.length ? this.followers : undefined,
         };
