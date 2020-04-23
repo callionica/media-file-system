@@ -248,13 +248,16 @@ function category(name) {
     }
     return defaultCategory;
 }
-function isLeaderFollower_(leader, follower) {
+function isLeaderFollowerName(leader, follower) {
     let l = leader.name + ".";
     let f = follower.name + ".";
     return f.startsWith(l);
 }
+function isLeaderFollowerNamedItem(leader, follower) {
+    return isLeaderFollowerName(leader.name, follower.name);
+}
 function isLeaderFollower(leader, follower) {
-    return leader.isLeader && !follower.isLeader && isLeaderFollower_(leader.name, follower.name);
+    return leader.isLeader && !follower.isLeader && isLeaderFollowerNamedItem(leader.namedItem, follower.namedItem);
 }
 function splitName(text) {
     // A tag starts with a period, cannot contain spaces or periods,
@@ -354,18 +357,18 @@ class MFSItem {
         }
         return this.followers_;
     }
-    get name() {
-        return this.namedItem.name;
+    get fileSystemName() {
+        return this.namedItem.name.name;
     }
-    get coreName() {
+    get name() {
         if (this.mfsName_ === undefined) {
-            this.mfsName_ = splitName(this.name.name);
+            this.mfsName_ = splitName(this.fileSystemName);
         }
         return this.mfsName_.core;
     }
     get tags() {
         if (this.mfsName_ === undefined) {
-            this.mfsName_ = splitName(this.name.name);
+            this.mfsName_ = splitName(this.fileSystemName);
         }
         return this.mfsName_.tags;
     }
@@ -373,13 +376,17 @@ class MFSItem {
         return this.namedItem.name.extension;
     }
     // If this item follows a leader, return the extra tags
+    // TODO: There's a different definition of tags between tags and extraTags
+    // tags - needs to distinguish between the core name and the tags so we don't
+    // allow tags to contain spaces or start with a number
+    // extra tags - we already know where the core name is so we don't check for spaces/numbers
     get extraTags() {
         let leader = this.leaders[0];
         if (leader === undefined) {
             return [];
         }
-        let name = this.name.name;
-        let core = leader.name.name;
+        let name = this.fileSystemName;
+        let core = leader.fileSystemName;
         let remainder = name.substring(core.length);
         let tags = remainder.split(".").filter(x => x !== "");
         this.extraTags_ = tags;
@@ -396,14 +403,14 @@ class MFSItem {
     }
     get data() {
         if (this.data_ === undefined) {
-            this.data_ = parseData(this.coreName, this.category_.extractors);
+            this.data_ = parseData(this.name, this.category_.extractors);
         }
         return this.data_;
     }
     toJSON() {
         // TODO
         return {
-            name: this.name.name,
+            name: this.fileSystemName,
             kind: this.kind,
             extension: this.extension,
             followers: this.followers.length ? this.followers : undefined,
