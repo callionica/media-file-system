@@ -668,11 +668,13 @@ class MFSItem {
     toJSON() {
         // TODO
         return {
-            name: this.fileSystemName,
+            name: this.name,
             kind: this.kind,
             extension: this.extension,
-            followers: this.followers.length ? this.followers : undefined,
             tags: this.tags.length ? this.tags : undefined,
+            fileSystemName: this.fileSystemName,
+            followers: this.followers.length ? this.followers : undefined,
+            
         };
         //return { ...this.group, kind: this.kind, children: this.children_ };
     }
