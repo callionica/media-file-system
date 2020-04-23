@@ -16,6 +16,8 @@ if (!Array.prototype.flatMap) {
     Array.prototype.flatMap = flatMap as any;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 // some only returns a boolean
 // find only returns exactly the object in the array
 // grab returns the object returned by the function as soon as it is not undefined
@@ -27,6 +29,16 @@ function grab<T, U>(data: T[], fn: (value: T) => U): U | undefined {
         }
     });
     return result;
+}
+
+function sort_by<T>(keyFn: (value: T) => any) {
+	return function sorter(a: T, b: T) {
+		var keyA = keyFn(a);
+		var keyB = keyFn(b);
+		if (keyA < keyB) return -1;
+		if (keyA > keyB) return  1;
+		return 0;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +308,7 @@ let FSNamed = (function () {
                 existing.items.push(child);
             }
         }
-        return result;
+        return result; //.sort(sort_by((x: FSNamedItem) => x.name.name));
     }
 
     return { isFolderItem, item, children };
@@ -459,7 +471,7 @@ const categories: Category[] = [
     { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: possibles },
     { extensions: ["txt"], kind: "text", isLeader: false, extractors: [] },
     { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: [] },
-    { extensions: ["vtt", "ttml"], kind: "subtitle", isLeader: false, extractors: [] },
+    { extensions: ["vtt", "ttml", "srt"], kind: "subtitle", isLeader: false, extractors: [] },
 ];
 
 const folderCategory: Category = categories[0];
@@ -667,7 +679,8 @@ class MFSItem {
             let children = FSNamed.children(this.namedItem);
             this.children_ = children.map(child => new MFSItem(child, this));
             // TODO - add virtual leaders here, generated from parsing names
-            // parse name, if !item.exists, create virtual 
+            // parse name, if !item.exists, create virtual
+            this.children_ = this.children_.sort(sort_by((x: MFSItem) => x.name)); // TODO
         }
         return this.children_;
     }
