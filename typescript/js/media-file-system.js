@@ -12,6 +12,18 @@ if (!Array.prototype.flatMap) {
     }
     Array.prototype.flatMap = flatMap;
 }
+// some only returns a boolean
+// find only returns exactly the object in the array
+// grab returns the object returned by the function as soon as it is not undefined
+function grab(data, fn) {
+    let result;
+    data.some(item => {
+        if (undefined !== (result = fn(item))) {
+            return true;
+        }
+    });
+    return result;
+}
 let FS = (function () {
     const separator = "/";
     function isFolder(url) {
@@ -419,21 +431,15 @@ class MFSItem {
                 ["fr", "français", "francais", "french"],
                 ["es", "espagnol", "spanish"],
             ];
-            let language;
-            data.some(function (alternateTags) {
-                if (alternateTags.indexOf(languageTag) >= 0) {
-                    language = alternateTags[0];
-                    return true;
+            let language = grab(data, languageTags => {
+                if (languageTags.indexOf(languageTag) >= 0) {
+                    return languageTags[0];
                 }
             });
             return language;
         }
         function tags2language(tags) {
-            let language;
-            tags.some(tag => {
-                language = tag2language(tag);
-                return language;
-            });
+            let language = grab(tags, tag2language);
             return language || "en";
         }
         return tags2language(this.tags);

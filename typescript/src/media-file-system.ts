@@ -16,6 +16,19 @@ if (!Array.prototype.flatMap) {
     Array.prototype.flatMap = flatMap as any;
 }
 
+// some only returns a boolean
+// find only returns exactly the object in the array
+// grab returns the object returned by the function as soon as it is not undefined
+function grab<T, U>(data: T[], fn: (value: T) => U): U | undefined {
+    let result: U | undefined;
+    data.some(item => {
+        if (undefined !== (result = fn(item))) {
+            return true;
+        }
+    });
+    return result;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FSPath is a unix-style file system path
@@ -680,11 +693,9 @@ class MFSItem {
                 ["es", "espagnol", "spanish"],
             ];
         
-            let language;
-            data.some(function (alternateTags) {
-                if (alternateTags.indexOf(languageTag) >= 0) {
-                    language = alternateTags[0];
-                    return true;
+            let language = grab(data, languageTags => {
+                if (languageTags.indexOf(languageTag) >= 0) {
+                    return languageTags[0];
                 }
             });
             
@@ -692,11 +703,7 @@ class MFSItem {
         }
         
         function tags2language(tags: MFSTag[]): MFSLanguage {
-            let language;
-            tags.some(tag => {
-                language = tag2language(tag);
-                return language;
-            });
+            let language = grab(tags, tag2language);
             return language || "en";
         }
 
