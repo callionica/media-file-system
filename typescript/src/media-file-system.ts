@@ -652,8 +652,7 @@ class MFSItem {
 
     get data(): Data {
         if (this.data_ === undefined) {
-            // TODO - exclude tags from name
-            this.data_ = parseData(this.name.name, this.category_.extractors);
+            this.data_ = parseData(this.coreName, this.category_.extractors);
         }
         return this.data_;
     }

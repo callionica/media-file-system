@@ -369,6 +369,9 @@ class MFSItem {
         }
         return this.mfsName_.tags;
     }
+    get extension() {
+        return this.namedItem.name.extension;
+    }
     // If this item follows a leader, return the extra tags
     get extraTags() {
         let leader = this.leaders[0];
@@ -393,8 +396,7 @@ class MFSItem {
     }
     get data() {
         if (this.data_ === undefined) {
-            // TODO - exclude tags from name
-            this.data_ = parseData(this.name.name, this.category_.extractors);
+            this.data_ = parseData(this.coreName, this.category_.extractors);
         }
         return this.data_;
     }
@@ -403,7 +405,7 @@ class MFSItem {
         return {
             name: this.name.name,
             kind: this.kind,
-            extension: this.name.extension,
+            extension: this.extension,
             followers: this.followers.length ? this.followers : undefined,
             tags: this.tags.length ? this.tags : undefined,
         };
