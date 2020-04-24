@@ -403,25 +403,26 @@ let possibles = (function () {
     }
 
     // Named capture group
-    function cap(name: string) {
+    function cap(name: keyof Data) {
         return function (...patterns: string[]) {
             return `(?<${name}>${patterns.join("")})`;
         }
     }
 
     let period = `[.]`;
-    let separator = `-`;
+    let dash = `-`;
     let colon = `:`;
 
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
+    let track = alt(`Track`);
 
     let digits = (count: number) => `(?:\\d{${count}})`;
-    let phrase = (capture: keyof Data) => `(?<${capture}>.{0,64}\\S)`;
+    let phrase = `(?:.{0,64}\\S)`;
     let number = (capture: keyof Data) => `(?<${capture}>\\d{1,4}(?=\\D|$))`;
 
-    let group = grp(phrase("group"), ws, separator, ws);
-    let name = phrase("name");
+    let group = grp(cap("group")(phrase), ws, dash, ws);
+    let name = cap("name")(phrase);
 
     let year = `(?<year>${digits(4)})`;
     let month = `(?<month>${digits(2)})`;
@@ -431,49 +432,69 @@ let possibles = (function () {
         re(
             opt(group),
             season, ws, number("subgroup"),
-            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
-            cap("name")(episode, ws, number("number"))
+            alt(grp(ws, dash), grp(opt(ws), colon)), ws,
+            cap("name")(alt(episode, track), ws, number("number"))
         ),
         re(
             opt(group),
             season, ws, number("subgroup"),
-            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
+            alt(grp(ws, dash), grp(opt(ws), colon)), ws,
             opt(episode), number("number"), opt(period), opt(ws),
             name
         ),
         re(
             opt(group),
             season, number("subgroup"), episode, number("number"),
-            opt(opt(separator), episode, number("endNumber")),
-            ws, separator, ws,
+            opt(opt(dash), episode, number("endNumber")),
+            ws, dash, ws,
             name
         ),
         re(
             opt(group),
             season, ws, number("subgroup"),
-            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
+            alt(grp(ws, dash), grp(opt(ws), colon)), ws,
             name
         ),
         re(
             opt(group),
-            year, separator, month, separator, day,
+            year, dash, month, dash, day,
             ws,
             name
         ),
         re(
             opt(group),
-            number("subgroup"), separator, number("number"),
+            number("subgroup"), dash, number("number"),
             ws,
             name,
         ),
         re(
             opt(group),
-            number("number"), opt(period), opt(ws),
+            cap("subgroup")(phrase),
+            ws, dash, ws,
+            number("number"),
+            alt(grp(period, opt(ws)), grp(ws, dash, ws), ws),
             name
         ),
         re(
             opt(group),
-            cap("name")(episode, ws, number("number"))
+            number("number"),
+            alt(grp(period, opt(ws)), grp(ws, dash, ws), ws),
+            name
+        ),
+        re(
+            opt(group),
+            cap("subgroup")(phrase),
+            ws, dash, ws,
+            cap("name")(
+                alt(
+                    grp(alt(episode, track), ws, number("number")),
+                    phrase
+                )
+            )
+        ),
+        re(
+            opt(group),
+            cap("name")(alt(episode, track), ws, number("number"))
         ),
     ];
 
