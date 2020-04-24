@@ -41,6 +41,28 @@ function sort_by<T>(keyFn: (value: T) => any) {
 	}
 }
 
+function crunch(text: string): string {
+    // Lowercase and diacritic removal
+    let c1 = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+	
+	// Remove punctuation except dashes & periods & underscores
+	c1 = c1.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\/:;<=>?@\[\]^`{|}~]/g, "");
+	
+	// Convert northern european letters
+	c1 = c1.replace(/å/g, "aa");
+	c1 = c1.replace(/ø|ö|œ/g, "oe");
+	c1 = c1.replace(/æ/g, "ae");
+	
+	// Collapse to english 26 and digits
+	c1 = c1.replace(/[^a-z0-9]/g, "-");
+    
+    // Coalesce dashes
+	c1 = c1.replace(/-{2,}/g, "-");
+	
+	return c1;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FSPath is a unix-style file system path
@@ -511,6 +533,23 @@ interface MFSName {
 }
 
 function splitName(text: string): MFSName {
+
+    /*function sortKey(text: string): string {
+		function padNumber(key: string): string {
+			var pieces = key.split("-");
+			pieces.forEach((piece, n) => {
+				if (piece.match(/^\d{1,10}$/)) {
+					pieces[n] = ("0000000000" + piece).substr(piece.length);
+				}
+			});
+			
+			return pieces.join("-");
+        }
+        let key = text.replace(/^((the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des))-(.*)$/i, "$8");
+
+        return padNumber(key);
+    }*/
+        
     // A tag starts with a period, cannot contain spaces or periods,
     // and the first character after the period (if there is one) is not a digit
     // All valid tags appear at the end of the string
@@ -519,11 +558,17 @@ function splitName(text: string): MFSName {
     let m = re.exec(text);
     if (m) {
         let g = m.groups!;
-        return { core: g.core, tags: g.tags.split(".").filter(x => x !== "") };
+        let core = g.core;
+        // let crunched = crunch(core);
+        // let sort = sortKey(crunched);
+        return { core, tags: g.tags.split(".").filter(x => x !== "") };
     }
 
     // Don't ever expect to be here since the regex should always match
-    return { core: text, tags: [] };
+    let core = text;
+    // let crunched = crunch(core);
+    // let sort = sortKey(crunched);
+    return { core, tags: [] };
 }
 
 class MFSItem {
@@ -645,6 +690,20 @@ class MFSItem {
         return this.mfsName_.core;
     }
 
+    // get crunchedName(): string {
+    //     if (this.mfsName_ === undefined) {
+    //         this.mfsName_ = splitName(this.fileSystemName);
+    //     }
+    //     return this.mfsName_.crunched;
+    // }
+
+    // get sortKey(): string {
+    //     if (this.mfsName_ === undefined) {
+    //         this.mfsName_ = splitName(this.fileSystemName);
+    //     }
+    //     return this.mfsName_.sort;
+    // }
+
     get tags(): MFSTag[] {
         if (this.mfsName_ === undefined) {
             this.mfsName_ = splitName(this.fileSystemName);
@@ -680,7 +739,8 @@ class MFSItem {
             this.children_ = children.map(child => new MFSItem(child, this));
             // TODO - add virtual leaders here, generated from parsing names
             // parse name, if !item.exists, create virtual
-            this.children_ = this.children_.sort(sort_by((x: MFSItem) => x.name)); // TODO
+            // TODO - sorting
+            // this.children_ = this.children_.sort(sort_by((x: MFSItem) => x.fileSystemName));
         }
         return this.children_;
     }
