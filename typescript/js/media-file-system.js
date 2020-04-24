@@ -246,21 +246,22 @@ let possibles = (function () {
     }
     let period = `[.]`;
     let separator = `-`;
+    let colon = `:`;
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
     let digits = (count) => `(?:\\d{${count}})`;
     let phrase = (capture) => `(?<${capture}>.{0,64}\\S)`;
-    let number = (capture) => `(?<${capture}>\\d{1,4})`;
+    let number = (capture) => `(?<${capture}>\\d{1,4}(?=\\D|$))`;
     let group = grp(phrase("group"), ws, separator, ws);
     let name = phrase("name");
     let year = `(?<year>${digits(4)})`;
     let month = `(?<month>${digits(2)})`;
     let day = `(?<day>${digits(2)})`;
     return [
-        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, cap("name")(episode, ws, number("number"))),
-        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, opt(episode), number("number"), opt(period), opt(ws), name),
+        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, separator), grp(opt(ws), colon)), ws, cap("name")(episode, ws, number("number"))),
+        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, separator), grp(opt(ws), colon)), ws, opt(episode), number("number"), opt(period), opt(ws), name),
         re(opt(group), season, number("subgroup"), episode, number("number"), opt(opt(separator), episode, number("endNumber")), ws, separator, ws, name),
-        re(opt(group), season, ws, number("subgroup"), ws, separator, ws, name),
+        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, separator), grp(opt(ws), colon)), ws, name),
         re(opt(group), year, separator, month, separator, day, ws, name),
         re(opt(group), number("subgroup"), separator, number("number"), ws, name),
         re(opt(group), number("number"), opt(period), opt(ws), name),
@@ -481,6 +482,24 @@ class MFSItem {
         }
         return this.data_;
     }
+    get media() {
+        let data = Object.assign({}, this.data);
+        if (data.group === undefined && this.parent && this.parent.parent) {
+            data.group = this.parent.parent.name;
+        }
+        if (data.subgroup === undefined) {
+            if (data.year !== undefined) {
+                data.subgroup = data.year;
+            }
+            else if (this.parent) {
+                data.subgroup = this.parent.name;
+            }
+        }
+        if (data.name === undefined) {
+            data.name = this.name;
+        }
+        return data;
+    }
     get language() {
         function tag2language(tag) {
             let languageTag = tag.toLowerCase();
@@ -510,6 +529,7 @@ class MFSItem {
         // TODO
         return {
             name: this.name,
+            media: this.media,
             kind: this.kind,
             extension: this.extension,
             tags: this.tags.length ? this.tags : undefined,

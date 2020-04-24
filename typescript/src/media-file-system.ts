@@ -32,34 +32,34 @@ function grab<T, U>(data: T[], fn: (value: T) => U): U | undefined {
 }
 
 function sort_by<T>(keyFn: (value: T) => any) {
-	return function sorter(a: T, b: T) {
-		var keyA = keyFn(a);
-		var keyB = keyFn(b);
-		if (keyA < keyB) return -1;
-		if (keyA > keyB) return  1;
-		return 0;
-	}
+    return function sorter(a: T, b: T) {
+        var keyA = keyFn(a);
+        var keyB = keyFn(b);
+        if (keyA < keyB) return -1;
+        if (keyA > keyB) return 1;
+        return 0;
+    }
 }
 
 function crunch(text: string): string {
     // Lowercase and diacritic removal
     let c1 = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-	
-	// Remove punctuation except dashes & periods & underscores
-	c1 = c1.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\/:;<=>?@\[\]^`{|}~]/g, "");
-	
-	// Convert northern european letters
-	c1 = c1.replace(/å/g, "aa");
-	c1 = c1.replace(/ø|ö|œ/g, "oe");
-	c1 = c1.replace(/æ/g, "ae");
-	
-	// Collapse to english 26 and digits
-	c1 = c1.replace(/[^a-z0-9]/g, "-");
-    
+
+    // Remove punctuation except dashes & periods & underscores
+    c1 = c1.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\/:;<=>?@\[\]^`{|}~]/g, "");
+
+    // Convert northern european letters
+    c1 = c1.replace(/å/g, "aa");
+    c1 = c1.replace(/ø|ö|œ/g, "oe");
+    c1 = c1.replace(/æ/g, "ae");
+
+    // Collapse to english 26 and digits
+    c1 = c1.replace(/[^a-z0-9]/g, "-");
+
     // Coalesce dashes
-	c1 = c1.replace(/-{2,}/g, "-");
-	
-	return c1;
+    c1 = c1.replace(/-{2,}/g, "-");
+
+    return c1;
 }
 
 
@@ -411,13 +411,14 @@ let possibles = (function () {
 
     let period = `[.]`;
     let separator = `-`;
+    let colon = `:`;
 
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
-    
+
     let digits = (count: number) => `(?:\\d{${count}})`;
     let phrase = (capture: keyof Data) => `(?<${capture}>.{0,64}\\S)`;
-    let number = (capture: keyof Data) => `(?<${capture}>\\d{1,4})`;
+    let number = (capture: keyof Data) => `(?<${capture}>\\d{1,4}(?=\\D|$))`;
 
     let group = grp(phrase("group"), ws, separator, ws);
     let name = phrase("name");
@@ -430,13 +431,13 @@ let possibles = (function () {
         re(
             opt(group),
             season, ws, number("subgroup"),
-            ws, separator, ws,
+            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
             cap("name")(episode, ws, number("number"))
         ),
         re(
             opt(group),
             season, ws, number("subgroup"),
-            ws, separator, ws,
+            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
             opt(episode), number("number"), opt(period), opt(ws),
             name
         ),
@@ -450,7 +451,7 @@ let possibles = (function () {
         re(
             opt(group),
             season, ws, number("subgroup"),
-            ws, separator, ws,
+            alt(grp(ws, separator), grp(opt(ws), colon)), ws,
             name
         ),
         re(
@@ -549,7 +550,7 @@ function splitName(text: string): MFSName {
 
         return padNumber(key);
     }*/
-        
+
     // A tag starts with a period, cannot contain spaces or periods,
     // and the first character after the period (if there is one) is not a digit
     // All valid tags appear at the end of the string
@@ -752,6 +753,24 @@ class MFSItem {
         return this.data_;
     }
 
+    get media(): Data {
+        let data = { ...this.data };
+        if (data.group === undefined && this.parent && this.parent.parent) {
+            data.group = this.parent.parent.name;
+        }
+        if (data.subgroup === undefined) {
+            if (data.year !== undefined) {
+                data.subgroup = data.year;
+            } else if (this.parent) {
+                data.subgroup = this.parent.name;
+            }
+        }
+        if (data.name === undefined) {
+            data.name = this.name;
+        }
+        return data;
+    }
+
     get language(): MFSLanguage {
 
         function tag2language(tag: string): MFSLanguage | undefined {
@@ -765,16 +784,16 @@ class MFSItem {
                 ["fr", "français", "francais", "french"],
                 ["es", "espagnol", "spanish"],
             ];
-        
+
             let language = grab(data, languageTags => {
                 if (languageTags.indexOf(languageTag) >= 0) {
                     return languageTags[0];
                 }
             });
-            
+
             return language;
         }
-        
+
         function tags2language(tags: MFSTag[]): MFSLanguage {
             let language = grab(tags, tag2language);
             return language || "en";
@@ -787,13 +806,14 @@ class MFSItem {
         // TODO
         return {
             name: this.name,
+            media: this.media,
             kind: this.kind,
             extension: this.extension,
             tags: this.tags.length ? this.tags : undefined,
             language: this.language,
             fileSystemName: this.fileSystemName,
             followers: this.followers.length ? this.followers : undefined,
-            
+
         };
         //return { ...this.group, kind: this.kind, children: this.children_ };
     }
