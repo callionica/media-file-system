@@ -247,28 +247,31 @@ let possibles = (function () {
     let period = `[.]`;
     let dash = `-`;
     let colon = `:`;
+    let separator = grp(ws, dash, ws);
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
     let track = alt(`Track`);
     let digits = (count) => `(?:\\d{${count}})`;
     let phrase = `(?:.{0,64}\\S)`;
-    let number = (capture) => `(?<${capture}>\\d{1,4}(?=\\D|$))`;
-    let group = grp(cap("group")(phrase), ws, dash, ws);
-    let name = cap("name")(phrase);
-    let year = `(?<year>${digits(4)})`;
-    let month = `(?<month>${digits(2)})`;
-    let day = `(?<day>${digits(2)})`;
+    let number = (capture) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
+    let number_prefix = (capture) => grp(number(capture), alt(separator, grp(period, ws), ws));
+    let year = cap("year")(digits(4));
+    let month = cap("month")(digits(2));
+    let day = cap("day")(digits(2));
+    let dateSeparator = alt(dash, period, ws);
+    let group = phrase;
+    let subgroupNumber = number("subgroupNumber");
+    let subgroup = alt(grp(season, ws, subgroupNumber), phrase);
+    let name = alt(grp(alt(episode, track), ws, number("numberFromName")), phrase);
     return [
-        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, dash), grp(opt(ws), colon)), ws, cap("name")(alt(episode, track), ws, number("number"))),
-        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, dash), grp(opt(ws), colon)), ws, opt(episode), number("number"), opt(period), opt(ws), name),
-        re(opt(group), season, number("subgroup"), episode, number("number"), opt(opt(dash), episode, number("endNumber")), ws, dash, ws, name),
-        re(opt(group), season, ws, number("subgroup"), alt(grp(ws, dash), grp(opt(ws), colon)), ws, name),
-        re(opt(group), year, dash, month, dash, day, ws, name),
-        re(opt(group), number("subgroup"), dash, number("number"), ws, name),
-        re(opt(group), cap("subgroup")(phrase), ws, dash, ws, number("number"), alt(grp(period, opt(ws)), grp(ws, dash, ws), ws), name),
-        re(opt(group), number("number"), alt(grp(period, opt(ws)), grp(ws, dash, ws), ws), name),
-        re(opt(group), cap("subgroup")(phrase), ws, dash, ws, cap("name")(alt(grp(alt(episode, track), ws, number("number")), phrase))),
-        re(opt(group), cap("name")(alt(episode, track), ws, number("number"))),
+        re(cap("group")(group), separator, cap("subgroup")(subgroup), separator, number_prefix("number"), cap("name")(name)),
+        re(cap("group")(group), separator, year, dateSeparator, month, dateSeparator, day, alt(separator, ws), cap("name")(name)),
+        re(opt(cap("group")(group), separator), season, subgroupNumber, episode, number("number"), opt(opt(dash), episode, number("endNumber")), separator, cap("name")(name)),
+        re(opt(cap("group")(group), separator), subgroupNumber, dash, number("number"), opt(alt(separator, ws), cap("name")(name))),
+        re(cap("group")(group), separator, cap("subgroup")(subgroup), separator, cap("name")(name)),
+        re(number_prefix("number"), cap("name")(name)),
+        re(cap("group")(group), separator, number_prefix("number"), cap("name")(name)),
+        re(cap("group")(group), separator, cap("name")(name)),
     ];
 })();
 const categories = [
