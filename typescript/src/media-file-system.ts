@@ -445,18 +445,18 @@ let possibles = (function () {
             number_prefix("number"),
             cap("name")(name)
         ),
-        re(
+        re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
             cap("group")(group), separator,
             year, dateSeparator, month, dateSeparator, day, alt(separator, ws),
             cap("name")(name)
         ),
-        re(
+        re( // Plex TV format: "Doctor Who - s1e1 - Rose"
             opt(cap("group")(group), separator),
             season, subgroupNumber, episode, number("number"),
                 opt(opt(dash), episode, number("endNumber")), separator,
             cap("name")(name)
         ),
-        re(
+        re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
             subgroupNumber, dash, number("number"), opt(alt(separator, ws),
             cap("name")(name))
@@ -466,7 +466,7 @@ let possibles = (function () {
             cap("subgroup")(subgroup), separator,
             cap("name")(name)
         ),
-        re(
+        re( // Audio format (artist & album come from folders): "01 Rose"
             number_prefix("number"),
             cap("name")(name)
         ),
@@ -757,21 +757,28 @@ class MFSItem {
     }
 
     get media(): Data {
-        let data = { ...this.data };
-        if (data.group === undefined && this.parent && this.parent.parent) {
-            data.group = this.parent.parent.name;
+        let result = { ...this.data };
+        if (result.group === undefined && this.parent && this.parent.parent) {
+            result.group = this.parent.parent.name;
         }
-        if (data.subgroup === undefined) {
-            if (data.year !== undefined) {
-                data.subgroup = data.year;
+        if (result.subgroup === undefined) {
+            if (result.subgroupNumber !== undefined) {
+                result.subgroup = `Season ${result.subgroupNumber}`;
+            } else if (result.year !== undefined) {
+                result.subgroup = result.year;
             } else if (this.parent) {
-                data.subgroup = this.parent.name;
+                result.subgroup = this.parent.name;
             }
         }
-        if (data.name === undefined) {
-            data.name = this.name;
+        if (result.number === undefined) {
+            if (result.numberFromName !== undefined) {
+                result.number = result.numberFromName;
+            }
         }
-        return data;
+        if (result.name === undefined) {
+            result.name = this.name;
+        }
+        return result;
     }
 
     get language(): MFSLanguage {
