@@ -768,7 +768,7 @@ class MFSItem {
             result.group = this.parent.parent.name;
         }
 
-        if (result.group) {
+        if (result.group !== undefined) {
             result.group = cleanup(result.group);
         }
 
@@ -782,7 +782,7 @@ class MFSItem {
             }
         }
 
-        if (result.subgroup) {
+        if (result.subgroup !== undefined) {
             result.subgroup = cleanup(result.subgroup);
         }
 
@@ -796,7 +796,7 @@ class MFSItem {
             result.name = this.name;
         }
 
-        if (result.name) {
+        if (result.name !== undefined) {
             result.name = cleanup(result.name);
         }
 
