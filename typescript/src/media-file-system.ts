@@ -758,9 +758,20 @@ class MFSItem {
 
     get media(): Data {
         let result = { ...this.data };
+
+        function cleanup(text: string) {
+            text = text.replace(/[_\s]+/g, " ");
+            return text;
+        }
+
         if (result.group === undefined && this.parent && this.parent.parent) {
             result.group = this.parent.parent.name;
         }
+
+        if (result.group) {
+            result.group = cleanup(result.group);
+        }
+
         if (result.subgroup === undefined) {
             if (result.subgroupNumber !== undefined) {
                 result.subgroup = `Season ${result.subgroupNumber}`;
@@ -770,14 +781,25 @@ class MFSItem {
                 result.subgroup = this.parent.name;
             }
         }
+
+        if (result.subgroup) {
+            result.subgroup = cleanup(result.subgroup);
+        }
+
         if (result.number === undefined) {
             if (result.numberFromName !== undefined) {
                 result.number = result.numberFromName;
             }
         }
+
         if (result.name === undefined) {
             result.name = this.name;
         }
+
+        if (result.name) {
+            result.name = cleanup(result.name);
+        }
+
         return result;
     }
 
