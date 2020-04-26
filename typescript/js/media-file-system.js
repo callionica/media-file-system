@@ -502,8 +502,15 @@ class MFSItem {
             text = text.replace(/[_\s]+/g, " ");
             return text;
         }
-        if (result.group === undefined && this.parent && this.parent.parent) {
-            result.group = this.parent.parent.name;
+        if (result.group === undefined) {
+            if (this.parent) {
+                if (this.parent.parent) {
+                    result.group = this.parent.parent.name;
+                }
+                else {
+                    result.group = this.parent.name;
+                }
+            }
         }
         if (result.group !== undefined) {
             result.group = cleanup(result.group);
@@ -515,7 +522,7 @@ class MFSItem {
             else if (result.year !== undefined) {
                 result.subgroup = result.year;
             }
-            else if (this.parent) {
+            else if (this.parent && this.parent.parent) {
                 result.subgroup = this.parent.name;
             }
         }
