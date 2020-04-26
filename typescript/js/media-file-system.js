@@ -211,7 +211,7 @@ function parseData(text, possibles) {
     }
     return match ? Object.assign({}, match.groups) : {};
 }
-let possibles = (function () {
+let standardDataExtractors = (function () {
     // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
     // Whitespace
     let ws = `(?:\\s{1,4})`;
@@ -279,15 +279,15 @@ let possibles = (function () {
     ];
 })();
 const categories = [
-    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: [] },
-    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: possibles },
-    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: possibles },
-    { extensions: ["txt"], kind: "text", isLeader: false, extractors: [] },
-    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: [] },
-    { extensions: ["vtt", "ttml", "srt"], kind: "subtitle", isLeader: false, extractors: [] },
+    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["txt"], kind: "text", isLeader: false, extractors: standardDataExtractors },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: standardDataExtractors },
+    { extensions: ["vtt", "ttml", "srt"], kind: "subtitle", isLeader: false, extractors: standardDataExtractors },
 ];
 const folderCategory = categories[0];
-const defaultCategory = { extensions: [], kind: "unknown", isLeader: false, extractors: [] };
+const defaultCategory = { extensions: [], kind: "unknown", isLeader: false, extractors: standardDataExtractors };
 function category(name) {
     if (name.extension !== undefined) {
         let ext = name.extension.toLowerCase();
@@ -371,6 +371,10 @@ class MFSItem {
             return [];
         }
         return this.parent.children.filter(child => child !== this);
+    }
+    // The children of this item that are kind === "folder"
+    get folders() {
+        return this.children.filter(child => child.kind === "folder");
     }
     get kind() {
         return this.category_.kind;

@@ -370,7 +370,7 @@ function parseData(text: string, possibles: RegExp[]): Data {
     return match ? { ...match.groups } : {};
 }
 
-let possibles = (function () {
+let standardDataExtractors = (function () {
 
     // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
 
@@ -492,16 +492,16 @@ interface Category {
 }
 
 const categories: Category[] = [
-    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: [] },
-    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: possibles },
-    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: possibles },
-    { extensions: ["txt"], kind: "text", isLeader: false, extractors: [] },
-    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: [] },
-    { extensions: ["vtt", "ttml", "srt"], kind: "subtitle", isLeader: false, extractors: [] },
+    { extensions: ["junction"], kind: "folder", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["m4a"], kind: "audio", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["m4v", "mp4", "ts"], kind: "video", isLeader: true, extractors: standardDataExtractors },
+    { extensions: ["txt"], kind: "text", isLeader: false, extractors: standardDataExtractors },
+    { extensions: ["jpeg", "jpg", "png"], kind: "image", isLeader: false, extractors: standardDataExtractors },
+    { extensions: ["vtt", "ttml", "srt"], kind: "subtitle", isLeader: false, extractors: standardDataExtractors },
 ];
 
 const folderCategory: Category = categories[0];
-const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false, extractors: [] };
+const defaultCategory: Category = { extensions: [], kind: "unknown", isLeader: false, extractors: standardDataExtractors };
 
 function category(name: FSName): Category {
     if (name.extension !== undefined) {
@@ -618,6 +618,11 @@ class MFSItem {
             return [];
         }
         return this.parent.children.filter(child => child !== this);
+    }
+
+    // The children of this item that are kind === "folder"
+    get folders(): MFSItem[] {
+        return this.children.filter(child => child.kind === "folder");
     }
 
     get kind(): string {
