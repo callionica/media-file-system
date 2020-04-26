@@ -579,6 +579,9 @@ class MFSItem {
     namedItem: FSNamedItem;
     category_: Category;
     // An item can be a folder and not-a-folder at the same time
+    // For example, a junction is a text file that acts like a folder
+    // and, because we group file system items by name, we could
+    // have a true file and a true folder grouped together
     isFolder: boolean;
     parent?: MFSItem;
     children_?: MFSItem[];
