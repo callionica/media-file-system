@@ -9,7 +9,7 @@
 // context of the JXA host app. This is only sensible if you have complete control over
 // the web pages that you load in the web view.
 
-// Web pages can call execInHost(js, cb) where:
+// Web pages can call evalInHost(js, cb) where:
 // js - The javascript code to execute in the host's context
 // cb - A callback function of the form (result, error) => {} to receive the result or error
 // of executing the code
@@ -17,8 +17,8 @@ function WebView(url) {
 
     let webview;
 
-    function EnableExecInHost(config) {
-        let handlerName = "exec";
+    function EnableEvalInHost(config) {
+        let handlerName = "eval";
 
         let className = "CalliScriptMessageHandler";
         if (!$[className]) {
@@ -46,7 +46,7 @@ function WebView(url) {
 
                             // Package up the results and send them back
                             let r = result && ("`" + JSON.stringify(result, null, 2) + "`");
-                            let js = `execInHostResponse(${o.response}, ${r}, ${error});`; // UNSAFE
+                            let js = `evalInHostResponse(${o.response}, ${r}, ${error});`; // UNSAFE
                             webview.evaluateJavaScriptCompletionHandler(js, (result, error) => { });
                         }
                     }
@@ -61,19 +61,19 @@ function WebView(url) {
 
         let us =
             `
-let execInHostResponses = [];
+let evalInHostResponses = [];
 
-function execInHost(js, cb) {
-    execInHostResponses.push(cb);
-    let responseID = (execInHostResponses.length - 1);
+function evalInHost(js, cb) {
+    evalInHostResponses.push(cb);
+    let responseID = (evalInHostResponses.length - 1);
 
     let json = JSON.stringify({ request: js, response: responseID}, null, 2);
     window.webkit.messageHandlers.${handlerName}.postMessage(json);
 }
 
-function execInHostResponse(responseID, result, error) {
-    let cb = execInHostResponses[responseID];
-    execInHostResponses[responseID] = undefined;
+function evalInHostResponse(responseID, result, error) {
+    let cb = evalInHostResponses[responseID];
+    evalInHostResponses[responseID] = undefined;
     if (cb) {
         let o = result && JSON.parse(result);
         cb(o, error);
@@ -88,7 +88,7 @@ function execInHostResponse(responseID, result, error) {
 
     let rect = $.NSZeroRect
     let config = $.WKWebViewConfiguration.alloc.init
-    EnableExecInHost(config);
+    EnableEvalInHost(config);
     webview = $.WKWebView.alloc.initWithFrameConfiguration(rect, config)
     let u = $.NSURL.URLWithString(url)
     let request = $.NSURLRequest.requestWithURL(u)
