@@ -63,20 +63,31 @@ function WebView(url) {
             `
 let evalInHostResponses = [];
 
-function evalInHost(js, cb) {
-    evalInHostResponses.push(cb);
-    let responseID = (evalInHostResponses.length - 1);
+function evalInHost(js) {
+    let promise = new Promise((resolve, reject) => {
+        let cb = (result, error) => {
+            if (error !== undefined) {
+                reject(error);
+            } else {
+                resolve(result);
+            }
+        };
+        evalInHostResponses.push(cb);
+        let responseID = (evalInHostResponses.length - 1);
 
-    let json = JSON.stringify({ request: js, response: responseID}, null, 2);
-    window.webkit.messageHandlers.${handlerName}.postMessage(json);
+        let json = JSON.stringify({ request: js, response: responseID}, null, 2);
+        window.webkit.messageHandlers.${handlerName}.postMessage(json);
+    });
+    
+    return promise;
 }
 
-function evalInHostResponse(responseID, result, error) {
+function evalInHostResponse(responseID, jsonResult, error) {
     let cb = evalInHostResponses[responseID];
     evalInHostResponses[responseID] = undefined;
     if (cb) {
-        let o = result && JSON.parse(result);
-        cb(o, error);
+        let result = jsonResult && JSON.parse(jsonResult);
+        cb(result, error);
     }
 }
 `
