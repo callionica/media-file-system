@@ -9,13 +9,14 @@
 // context of the JXA host app. This is only sensible if you have complete control over
 // the web pages that you load in the web view.
 
-// Web pages can call evalInHost(js, cb) where:
-// js - The javascript code to execute in the host's context
-// cb - A callback function of the form (result, error) => {} to receive the result or error
-// of executing the code
+// Web pages hosted by this webview can call evalInHost(js) which returns a Promise
 function WebView(url) {
 
     let webview;
+
+    function evalInGuest(js) {
+        webview.evaluateJavaScriptCompletionHandler(js, (result, error) => { });
+    }
 
     function EnableEvalInHost(config) {
         let handlerName = "eval";
@@ -32,22 +33,28 @@ function WebView(url) {
                             // Parse the request
                             let o = JSON.parse(message.body.js);
 
-                            let result;
-                            let error;
+                            // Eval the code and convert the result to a promise
+                            // (because if the code returns a promise, we'll need it to get the result)
+                            let promise;
                             try {
                                 // eval is UNSAFE
                                 // The code that we are going to execute came from the web page
-                                result = eval(o.request); // UNSAFE
+                                let result = eval(o.request); // UNSAFE
+                                promise = Promise.resolve(result);
                             } catch (e) {
-                                // Lack of escaping is unsafe
-                                // We're going to use this error text to build up Javascript that we execute in the page context
-                                error = "`" + e + "`"; // UNSAFE
+                                promise = Promise.reject(e);
                             }
 
                             // Package up the results and send them back
-                            let r = result && ("`" + JSON.stringify(result, null, 2) + "`");
-                            let js = `evalInHostResponse(${o.response}, ${r}, ${error});`; // UNSAFE
-                            webview.evaluateJavaScriptCompletionHandler(js, (result, error) => { });
+                            promise.then(result => {
+                                let r = result && ("`" + JSON.stringify(result, null, 2) + "`");
+                                let js = `evalInHostResponse(${o.response}, ${r}, undefined);`; // UNSAFE
+                                evalInGuest(js);
+                            }).catch(error => {
+                                let e = error && ("`" + error + "`");
+                                let js = `evalInHostResponse(${o.response}, undefined, ${e});`; // UNSAFE
+                                evalInGuest(js);
+                            });
                         }
                     }
                 }
