@@ -107,6 +107,10 @@ function evalInHostResponse(responseID, jsonResult, error) {
     let rect = $.NSZeroRect
     let config = $.WKWebViewConfiguration.alloc.init
     EnableEvalInHost(config);
+
+    // config.preferences.setValueForKey(ObjC.wrap(true), ObjC.wrap("allowFileAccessFromFileURLs"));
+	// config.preferences.setValueForKey(ObjC.wrap(true), ObjC.wrap("universalAccessFromFileURLsAllowed"));
+
     webview = $.WKWebView.alloc.initWithFrameConfiguration(rect, config)
     let u = $.NSURL.URLWithString(url)
     let request = $.NSURLRequest.requestWithURL(u)
