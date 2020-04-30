@@ -43,6 +43,10 @@ function WebSchemeHandler(config) {
             "htm": "text/html",
             "html": "text/html",
 
+            "css": "text/css",
+
+            "js": "application/javascript",
+
             "txt": "text/plain",
 
             "ttml": "application/ttml+xml",
@@ -83,16 +87,15 @@ function WebSchemeHandler(config) {
 
         let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $("utf-8"));
 
-        /*
+        
         let headers = {
-            "Content-Type": mimeType,
+            "Content-Type": `${mimeType}; charset=utf-8`,
             "Cache-Control": "no-cache",
         };
 
         let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, 200, $(), $(headers));
-        */
 
-        task.didReceiveResponse(response);
+        task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
         task.didFinish();
     }
