@@ -17,27 +17,57 @@ function WebSchemeHandler(config) {
         }
 
         if (isFolder(url)) {
-            extension = "html";
-            path = path + separator + "index.html";
+            extension = $("html");
+            path = $(path.js + separator + "index.html");
         }
 
         return {path, extension};
     }
 
+    // Standard javascript:
     function mimeTypeForExtension(extension) {
-        return "text/html"; // TODO
+        let ext = extension.toLowerCase();
+        let types = {
+            "htm": "text/html",
+            "html": "text/html",
+
+            "txt": "text/plain",
+
+            "ttml": "application/ttml+xml",
+            "vtt": "text/vtt",
+            "webvtt": "text/vtt",
+            "srt": "text/plain",
+
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+
+            "ts": "video/mp2t",
+            "mp2": "video/mpeg",
+            "mp2v": "video/mpeg",
+            
+            "mp4": "video/mp4",
+            "mp4v": "video/mp4",
+            "m4v": "video/x-m4v",
+
+            "mp3": "audio/mpeg",
+            "m4a": "audio/m4a",
+            "m3u": "audio/x-mpegurl",
+            "m3u8": "audio/x-mpegurl",
+        };
+        return types[ext] || "text/plain";
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let url = task.request.URL;
         let {path, extension} = pathAndExtension(url);
-        let mimeType = mimeTypeForExtension(extension);
+        let mimeType = mimeTypeForExtension(extension.js);
         let options = $.NSDataReadingMappedIfSafe;
         let error = $();
         let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
         let expectedContentLength = data.length;
 
-        let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, mimeType, expectedContentLength, $());
+        let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $());
 
         /*
         let headers = {
