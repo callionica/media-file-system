@@ -67,24 +67,34 @@ function WebViewWindow(url) {
     return window
 }
 
-function main() {
+// Call main() with the path to the first page of your application
+// Use relative paths within the pages and everything will work out great
+function main(mainPage, host) {
     ObjC.import('Foundation');
     ObjC.import('Cocoa');
     ObjC.import('WebKit');
 
-    var app = Application.currentApplication();
+    let app = Application.currentApplication();
     app.includeStandardAdditions = true;
 
-    function toFSURL(path) {
-        return $.NSURL.fileURLWithPath(path).absoluteString.js;
+    let path = $.NSString.alloc.initWithUTF8String(app.pathTo(this)).stringByDeletingLastPathComponent.js + "/";
+
+    if (host === undefined) {
+        host = "callionica.com";
     }
 
-    var path = toFSURL($.NSString.alloc.initWithUTF8String(app.pathTo(this)).stringByDeletingLastPathComponent.js + "/");
+    if (mainPage === undefined) {
+        mainPage = path + "$app.html";
+    }
+
+    if (!mainPage.startsWith("/")) {
+        throw "File paths must start with '/'";
+    }
 
     createMenu();
-    
-    var MyWindow = WebViewWindow("media-file://callionica.com" + path + "$app.html")
-    MyWindow.makeKeyAndOrderFront(null)
+
+    var MyWindow = WebViewWindow(`media-file://${host}${mainPage}`);
+    MyWindow.makeKeyAndOrderFront(null);
     MyWindow.toggleFullScreen(null);
 }
 
