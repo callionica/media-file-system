@@ -1,8 +1,13 @@
 // ALL RIGHTS RESERVED
 
+// DO NOT USE THIS SCHEME HANDLER IF YOU EVER LOAD UNTRUSTED CONTENT IN THE WEBVIEW.
+// THIS SCHEME HANDLER GIVES TOTAL ACCESS TO THE LOCAL FILE SYSTEM.
+
 // An implementation of WKURLSchemeHandler that gives more flexibility than the file:// scheme
 // when using WKWebView to read files from the local file system. For example, using a custom
-// scheme allows us to provide a default document (index.html) when the URL represents a folder
+// scheme allows us to provide a default document (index.html) when the URL represents a folder.
+// It also allows us to load files from multiple disks without hitting the security blocks associated
+// with the file:// scheme.
 function WebSchemeHandler(config) {
 
     // Get the file path and extension from a URL

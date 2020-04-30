@@ -1,8 +1,7 @@
-// ALL RIGHTS RESERVED.
+// ALL RIGHTS RESERVED
 
-// WATCH OUT!!!
+// WATCH OUT!!! DO NOT USE THIS WEB VIEW IF YOU INTEND TO LOAD UNTRUSTED HTML PAGES!
 // THIS CODE ALLOWS AN HTML PAGE TO EXECUTE CODE AS IF IT IS A JXA SCRIPT!
-// DO NOT USE IT IF YOU INTEND TO LOAD UNTRUSTED HTML PAGES!
 
 // This WKWebView has a WKScriptMessageHandler that evals the message passed to it.
 // This allows the web pages contained by the WKWebView to execute Javascript in the 
