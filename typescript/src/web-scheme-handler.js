@@ -10,6 +10,13 @@
 // with the file:// scheme.
 function WebSchemeHandler(config) {
 
+    // function alert(text, informationalText) {
+    //     var options = {};
+    //     if (informationalText) options.message = informationalText;
+    //     let app = Application.currentApplication();
+    //     app.displayAlert(text, options);
+    // }
+
     // Get the file path and extension from a URL
     // adding "/index.html" if the URL is a folder
     function pathAndExtension(url) {
@@ -26,7 +33,7 @@ function WebSchemeHandler(config) {
             path = $(path.js + separator + "index.html");
         }
 
-        return {path, extension};
+        return { path, extension };
     }
 
     // Standard javascript:
@@ -50,7 +57,7 @@ function WebSchemeHandler(config) {
             "ts": "video/mp2t",
             "mp2": "video/mpeg",
             "mp2v": "video/mpeg",
-            
+
             "mp4": "video/mp4",
             "mp4v": "video/mp4",
             "m4v": "video/x-m4v",
@@ -65,14 +72,16 @@ function WebSchemeHandler(config) {
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let url = task.request.URL;
-        let {path, extension} = pathAndExtension(url);
+        let { path, extension } = pathAndExtension(url);
         let mimeType = mimeTypeForExtension(extension.js);
         let options = $.NSDataReadingMappedIfSafe;
         let error = $();
         let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
         let expectedContentLength = data.length;
 
-        let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $());
+        // console.log(`${path.js}, ${extension.js}`);
+
+        let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $("utf-8"));
 
         /*
         let headers = {
