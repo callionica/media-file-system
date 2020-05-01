@@ -78,6 +78,16 @@ function WebSchemeHandler(config) {
         let url = task.request.URL;
         let { path, extension } = pathAndExtension(url);
         let mimeType = mimeTypeForExtension(extension.js);
+
+        let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(path, error);
+        let fileSize = attrs.fileSize;
+
+        if (fileSize > 10*1000*1000) {
+            $.NSBeep();
+            task.didFinish();
+            return;
+        }
+
         let options = $.NSDataReadingMappedIfSafe;
         let error = $();
         let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
@@ -85,15 +95,60 @@ function WebSchemeHandler(config) {
 
         // console.log(`${path.js}, ${extension.js}`);
 
-        let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $("utf-8"));
+        let status = 200;
 
-        
         let headers = {
             "Content-Type": `${mimeType}; charset=utf-8`,
             "Cache-Control": "no-cache",
+            "Accept-Ranges": "bytes",
+            "Content-Length": `${data.length}`,
         };
 
-        let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, 200, $(), $(headers));
+        debugger;
+
+        let range = task.request.valueForHTTPHeaderField("Range");
+        if (!range.isNil()) {
+            let handledRange = false;
+
+            // We are dealing with a range request
+            let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
+
+            // TODO - handle suffix range requests
+            // TODO - handle conditional requests
+            // TODO - other validation
+
+            if (m) {
+                let first = parseInt(m.groups.first, 10);
+                let last = (m.groups.last === undefined) ? (data.length - 1) : parseInt(m.groups.last, 10);
+
+                if ((first <= last) && (last < data.length)) {
+                    let length = (last - first) + 1;
+
+                    status = 206;
+                    headers["Content-Length"] = `${length}`;
+                    headers["Content-Range"] = `bytes ${first}-${last}/${data.length}`
+                    
+                    // subdataWithRange will raise NSRangeException if not within range
+                    // but we should never see that because we've already checked validity
+                    data = data.subdataWithRange($.NSMakeRange(first, length));
+
+                    handledRange = true;
+
+                    $.NSBeep();
+                }
+            }
+
+            if (!handledRange) {
+                status = 416;
+                headers["Content-Length"] = `0`;
+                headers["Content-Range"] = `bytes */${data.length}`
+                data = $.NSData.data;
+            }
+        }
+
+        // let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $("utf-8"));
+
+        let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, status, $(), $(headers));
 
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
