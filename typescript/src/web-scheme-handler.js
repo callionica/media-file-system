@@ -79,17 +79,18 @@ function WebSchemeHandler(config) {
         let { path, extension } = pathAndExtension(url);
         let mimeType = mimeTypeForExtension(extension.js);
 
+        let error = $();
         let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(path, error);
         let fileSize = attrs.fileSize;
 
-        if (fileSize > 10*1000*1000) {
+        if (fileSize > 10 * 1000 * 1000) {
             $.NSBeep();
             task.didFinish();
             return;
         }
 
         let options = $.NSDataReadingMappedIfSafe;
-        let error = $();
+        
         let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
         let expectedContentLength = data.length;
 
@@ -103,8 +104,6 @@ function WebSchemeHandler(config) {
             "Accept-Ranges": "bytes",
             "Content-Length": `${data.length}`,
         };
-
-        debugger;
 
         let range = task.request.valueForHTTPHeaderField("Range");
         if (!range.isNil()) {
@@ -127,7 +126,7 @@ function WebSchemeHandler(config) {
                     status = 206;
                     headers["Content-Length"] = `${length}`;
                     headers["Content-Range"] = `bytes ${first}-${last}/${data.length}`
-                    
+
                     // subdataWithRange will raise NSRangeException if not within range
                     // but we should never see that because we've already checked validity
                     data = data.subdataWithRange($.NSMakeRange(first, length));
