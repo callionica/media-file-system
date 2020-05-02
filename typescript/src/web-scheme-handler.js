@@ -90,20 +90,20 @@ function WebSchemeHandler(config) {
                 let error = $();
                 return handle.seekToOffsetError(offset, error);
             }
-    
+
             handle.seekToFileOffset(offset);
             return (handle.offsetInFile == offset);
         }
-    
+
         function read(handle, length) {
             if (handle.readDataUpToLengthError) {
                 let error = $();
                 return handle.readDataUpToLengthError(length, error);
             }
-    
+
             return handle.readDataOfLength(length);
         }
-    
+
         let ns = $(path);
         let handle = $.NSFileHandle.fileHandleForReadingAtPath(ns);
         let error = $();
@@ -112,12 +112,13 @@ function WebSchemeHandler(config) {
         }
     }
 
-    function getRange(request) {
+    function getRange(request, fileSize) {
         const MB = 1024 * 1024;
         const minimumRangeLength = 1 * MB;
         const maximumRangeLength = 8 * MB;
+        const maximumFileSize = 16 * MB;
 
-        let range = task.request.valueForHTTPHeaderField("Range");
+        let range = request.valueForHTTPHeaderField("Range");
         if (!range.isNil()) {
             // We are dealing with a range request
             let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
@@ -151,6 +152,10 @@ function WebSchemeHandler(config) {
             }
         }
 
+        // If we get a non-range request for a large file, we treat it like a range request
+        if (maximumFileSize < fileSize) {
+            return { first: 0, last: maximumFileSize - 1, length: maximumFileSize };
+        }
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
@@ -172,55 +177,19 @@ function WebSchemeHandler(config) {
             "Content-Length": `${fileSize}`,
         };
 
-        let range = task.request.valueForHTTPHeaderField("Range");
-        if (!range.isNil()) {
+        let range = getRange(task.request, fileSize);
+        if (range !== undefined) {
             let handledRange = false;
+            let { first, last, length } = range;
+            if ((first <= last) && (last < fileSize)) {
 
-            log(`${path.js} ${fileSize} ${range.js}`);
+                status = 206;
+                headers["Content-Length"] = `${length}`;
+                headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
 
-            // We are dealing with a range request
-            let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
+                data = readData(path, first, length);
 
-            // TODO - handle suffix range requests
-            // TODO - handle conditional requests
-            // TODO - other validation
-
-            if (m) {
-                let first = parseInt(m.groups.first, 10);
-                let last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
-                let length = (last - first) + 1;
-
-                // Trim large requests to an acceptable size
-                // and increase the size of small requests
-                if (length < minimumRangeLength) {
-                    length = minimumRangeLength;
-                } else if (maximumRangeLength < length) {
-                    length = maximumRangeLength;
-                }
-
-                last = (length - 1) + first;
-
-                // If the last byte is beyond the size of the file,
-                // bring it back in to range
-                if (fileSize <= last) {
-                    last = fileSize - 1;
-                }
-
-                if ((first <= last) && (last < fileSize)) {
-                    log(`${path.js} ${length} ${first} ${last}`);
-
-                    status = 206;
-                    headers["Content-Length"] = `${length}`;
-                    headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
-
-                    data = readData(path, first, length);
-
-                    log(`${path.js} ${data.length}`);
-
-                    handledRange = true;
-
-                    $.NSBeep();
-                }
+                handledRange = true;
             }
 
             if (!handledRange) {
@@ -231,12 +200,6 @@ function WebSchemeHandler(config) {
             }
 
         } else {
-            
-            if (fileSize > 10 * 1000 * 1000) {
-                $.NSBeep();
-                task.didFinish();
-                return;
-            }
 
             let options = $.NSDataReadingMappedIfSafe;
             data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
@@ -244,7 +207,7 @@ function WebSchemeHandler(config) {
 
         let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, status, $(), $(headers));
 
-        log(`${httpResponse.URL.absoluteString.js} ${JSON.stringify(headers, null, 2)}`);
+        // log(`${httpResponse.URL.absoluteString.js} ${JSON.stringify(headers, null, 2)}`);
 
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
