@@ -25,17 +25,19 @@
                     "didReceiveData:": {
                         types: ["void", ["id"]],
                         implementation: function didReceiveData(data) {
-                            console.log("didReceiveData");
+                            console.log("didReceiveData", data.length);
                         }
                     },
-                    "URLSession:task:didCompleteWithError:": {
-                        types: ["void", ["id", "id", "id"]],
-                        implementation: function (session, dataTask, error) {
-                            if (error.isNil()) {
-                                this.task.didFinish();
-                            } else {
-                                this.task.didFailWithError(error);
-                            }
+                    "didFinish": {
+                        types: ["void", []],
+                        implementation: function didFinish() {
+                            console.log("didFinish");
+                        }
+                    },
+                    "didFailWithError:": {
+                        types: ["void", ["id"]],
+                        implementation: function didFailWithError(error) {
+                            console.log("didFailWithError", error.localizedDescription.js);
                         }
                     },
                 }
@@ -72,7 +74,7 @@
                         types: ["void", ["id", "id", "id"]],
                         implementation: function (session, dataTask, error) {
                             if (error.isNil()) {
-                                this.task.didFinish();
+                                this.task.didFinish;
                             } else {
                                 this.task.didFailWithError(error);
                             }
@@ -119,7 +121,7 @@
         let dataURL = $.NSURL.fileURLWithPath(path);
         let session = createTaskSession(task);
         //let dataTask = session.dataTaskWithRequest(request);
-        let dataTask = session.dataTaskWithURL(url);
+        let dataTask = session.dataTaskWithURL(dataURL);
         dataTask.resume;
         return;
 
@@ -150,13 +152,16 @@
     //let url = "media-file://callionica.com/Volumes/B128/TV/Blue%20Planet%20Revisited/Blue%20Planet%20Revisited%20-%20Series%201%20-%201.%20A%20Sharks%20Tale.ts";
     let url = "media-file://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
     let webView = $();
-    let task = {
+    let task = createMockWKTask();
+    task.request = $.NSURLRequest.requestWithURL($.NSURL.URLWithString(url));
+    
+    /*{
         request: $.NSURLRequest.requestWithURL($.NSURL.URLWithString(url)),
         didReceiveResponse: (response) => { log(response) },
         didReceiveData: (data) => { log(data) },
         didFinish: () => { log("finished") },
         didFailWithError: (error) => { log(error) },
-    };
+    };*/
 
 
     webViewStartURLSchemeTask(webView, task);
