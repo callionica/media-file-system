@@ -74,6 +74,34 @@ function WebSchemeHandler(config) {
         return types[ext] || "text/plain";
     }
 
+    function readData(path, offset, length) {
+        function seek(handle, offset) {
+            if (handle.seekToOffsetError) {
+                let error = $();
+                return handle.seekToOffsetError(offset, error);
+            }
+    
+            handle.seekToFileOffset(offset);
+            return (handle.offsetInFile == offset);
+        }
+    
+        function read(handle, length) {
+            if (handle.readDataUpToLengthError) {
+                let error = $();
+                return handle.readDataUpToLengthError(length, error);
+            }
+    
+            return handle.readDataOfLength(length);
+        }
+    
+        let ns = $(path);
+        let handle = $.NSFileHandle.fileHandleForReadingAtPath(ns);
+        let error = $();
+        if (seek(handle, offset)) {
+            return read(handle, length);
+        }
+    }
+
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let url = task.request.URL;
         let { path, extension } = pathAndExtension(url);
@@ -83,26 +111,14 @@ function WebSchemeHandler(config) {
         let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(path, error);
         let fileSize = attrs.fileSize;
 
-        if (fileSize > 10 * 1000 * 1000) {
-            $.NSBeep();
-            task.didFinish();
-            return;
-        }
-
-        let options = $.NSDataReadingMappedIfSafe;
-        
-        let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
-        let expectedContentLength = fileSize;
-
-        // console.log(`${path.js}, ${extension.js}`);
-
         let status = 200;
+        let data;
 
         let headers = {
             "Content-Type": `${mimeType}; charset=utf-8`,
             "Cache-Control": "no-cache",
             "Accept-Ranges": "bytes",
-            "Content-Length": `${data.length}`,
+            "Content-Length": `${fileSize}`,
         };
 
         let range = task.request.valueForHTTPHeaderField("Range");
@@ -123,13 +139,21 @@ function WebSchemeHandler(config) {
                 if ((first <= last) && (last < data.length)) {
                     let length = (last - first) + 1;
 
+                    if (length > 10 * 1000 * 1000) {
+                        $.NSBeep();
+                        task.didFinish();
+                        return;
+                    }
+
                     status = 206;
                     headers["Content-Length"] = `${length}`;
                     headers["Content-Range"] = `bytes ${first}-${last}/${data.length}`
 
                     // subdataWithRange will raise NSRangeException if not within range
                     // but we should never see that because we've already checked validity
-                    data = data.subdataWithRange($.NSMakeRange(first, length));
+                    // data = data.subdataWithRange($.NSMakeRange(first, length));
+
+                    data = readData(path, first, length);
 
                     handledRange = true;
 
@@ -143,9 +167,18 @@ function WebSchemeHandler(config) {
                 headers["Content-Range"] = `bytes */${data.length}`
                 data = $.NSData.data;
             }
-        }
 
-        // let response = $.NSURLResponse.alloc.initWithURLMIMETypeExpectedContentLengthTextEncodingName(url, $(mimeType), expectedContentLength, $("utf-8"));
+        } else {
+            
+            if (fileSize > 10 * 1000 * 1000) {
+                $.NSBeep();
+                task.didFinish();
+                return;
+            }
+
+            let options = $.NSDataReadingMappedIfSafe;
+            data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
+        }
 
         let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, status, $(), $(headers));
 
