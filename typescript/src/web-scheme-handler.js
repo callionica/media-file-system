@@ -112,6 +112,47 @@ function WebSchemeHandler(config) {
         }
     }
 
+    function getRange(request) {
+        const MB = 1024 * 1024;
+        const minimumRangeLength = 1 * MB;
+        const maximumRangeLength = 8 * MB;
+
+        let range = task.request.valueForHTTPHeaderField("Range");
+        if (!range.isNil()) {
+            // We are dealing with a range request
+            let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
+
+            // TODO - handle suffix range requests
+            // TODO - handle conditional requests
+            // TODO - other validation
+
+            if (m) {
+                let first = parseInt(m.groups.first, 10);
+                let last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
+                let length = (last - first) + 1;
+
+                // Trim large requests to an acceptable size
+                // and increase the size of small requests
+                if (length < minimumRangeLength) {
+                    length = minimumRangeLength;
+                } else if (maximumRangeLength < length) {
+                    length = maximumRangeLength;
+                }
+
+                last = (length - 1) + first;
+
+                // If the last byte is beyond the size of the file,
+                // bring it back in to range
+                if (fileSize <= last) {
+                    last = fileSize - 1;
+                }
+
+                return { first, last, length };
+            }
+        }
+
+    }
+
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let url = task.request.URL;
         let { path, extension } = pathAndExtension(url);
@@ -147,25 +188,30 @@ function WebSchemeHandler(config) {
             if (m) {
                 let first = parseInt(m.groups.first, 10);
                 let last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
+                let length = (last - first) + 1;
+
+                // Trim large requests to an acceptable size
+                // and increase the size of small requests
+                if (length < minimumRangeLength) {
+                    length = minimumRangeLength;
+                } else if (maximumRangeLength < length) {
+                    length = maximumRangeLength;
+                }
+
+                last = (length - 1) + first;
+
+                // If the last byte is beyond the size of the file,
+                // bring it back in to range
+                if (fileSize <= last) {
+                    last = fileSize - 1;
+                }
 
                 if ((first <= last) && (last < fileSize)) {
-                    let length = (last - first) + 1;
-
                     log(`${path.js} ${length} ${first} ${last}`);
-
-                    if (length > 10 * 1000 * 1000) {
-                        log(`Range too large`);
-                        task.didFinish();
-                        return;
-                    }
 
                     status = 206;
                     headers["Content-Length"] = `${length}`;
                     headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
-
-                    // subdataWithRange will raise NSRangeException if not within range
-                    // but we should never see that because we've already checked validity
-                    // data = data.subdataWithRange($.NSMakeRange(first, length));
 
                     data = readData(path, first, length);
 
