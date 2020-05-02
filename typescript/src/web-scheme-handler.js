@@ -10,12 +10,15 @@
 // with the file:// scheme.
 function WebSchemeHandler(config) {
 
-    // function alert(text, informationalText) {
-    //     var options = {};
-    //     if (informationalText) options.message = informationalText;
-    //     let app = Application.currentApplication();
-    //     app.displayAlert(text, options);
-    // }
+    function alert(text, informationalText) {
+        if (text && text.js) text = text.js;
+        if (informationalText && informationalText.js) informationalText = informationalText.js;
+        var options = {};
+        if (informationalText) options.message = informationalText;
+        let app = Application.currentApplication();
+        app.includeStandardAdditions = true;
+        app.displayAlert(text, options);
+    }
 
     // Get the file path and extension from a URL
     // adding "/index.html" if the URL is a folder
@@ -124,6 +127,8 @@ function WebSchemeHandler(config) {
         let range = task.request.valueForHTTPHeaderField("Range");
         if (!range.isNil()) {
             let handledRange = false;
+
+            alert("RANGE");
 
             // We are dealing with a range request
             let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
