@@ -1,3 +1,41 @@
+function readData(path, offset, length) {
+    function seek(handle, offset) {
+        if (handle.seekToOffsetError) {
+            let error = $();
+            return handle.seekToOffsetError(offset, error);
+        }
+
+        handle.seekToFileOffset(offset);
+        return (handle.offsetInFile == offset);
+    }
+
+    function read(handle, length) {
+        if (handle.readDataUpToLengthError) {
+            let error = $();
+            return handle.readDataUpToLengthError(length, error);
+        }
+
+        return handle.readDataOfLength(length);
+    }
+
+    let ns = $(path);
+    let handle = $.NSFileHandle.fileHandleForReadingAtPath(ns);
+    let error = $();
+    if (seek(handle, offset)) {
+        return read(handle, length);
+    }
+}
+
+let url = "media-file://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
+let path = "/Users/user/Desktop/__current/marple/02-1.ts";
+
+let data = readData(path, 63, 64);
+
+console.log(data.length);
+
+throw 1;
+
+
 var s;
 debugger;
 
