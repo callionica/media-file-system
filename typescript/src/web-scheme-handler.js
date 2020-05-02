@@ -20,6 +20,13 @@ function WebSchemeHandler(config) {
         app.displayAlert(text, options);
     }
 
+    let logCount = 0;
+    function log(contents) {
+        let path = `/Users/user/Desktop/__current/log${++logCount}.txt`;
+        let s = $(contents);
+        s.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
+    }
+
     // Get the file path and extension from a URL
     // adding "/index.html" if the URL is a folder
     function pathAndExtension(url) {
@@ -128,7 +135,7 @@ function WebSchemeHandler(config) {
         if (!range.isNil()) {
             let handledRange = false;
 
-            alert("RANGE");
+            log(`${path.js} ${fileSize} ${range.js}`);
 
             // We are dealing with a range request
             let m = range.js.match(/^bytes=(?<first>\d+)-(?<last>\d+)?$/);
@@ -139,26 +146,30 @@ function WebSchemeHandler(config) {
 
             if (m) {
                 let first = parseInt(m.groups.first, 10);
-                let last = (m.groups.last === undefined) ? (data.length - 1) : parseInt(m.groups.last, 10);
+                let last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
 
-                if ((first <= last) && (last < data.length)) {
+                if ((first <= last) && (last < fileSize)) {
                     let length = (last - first) + 1;
 
+                    log(`${path.js} ${length} ${first} ${last}`);
+
                     if (length > 10 * 1000 * 1000) {
-                        $.NSBeep();
+                        log(`Range too large`);
                         task.didFinish();
                         return;
                     }
 
                     status = 206;
                     headers["Content-Length"] = `${length}`;
-                    headers["Content-Range"] = `bytes ${first}-${last}/${data.length}`
+                    headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
 
                     // subdataWithRange will raise NSRangeException if not within range
                     // but we should never see that because we've already checked validity
                     // data = data.subdataWithRange($.NSMakeRange(first, length));
 
                     data = readData(path, first, length);
+
+                    log(`${path.js} ${data.length}`);
 
                     handledRange = true;
 
@@ -186,6 +197,8 @@ function WebSchemeHandler(config) {
         }
 
         let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, status, $(), $(headers));
+
+        log(`${httpResponse.URL.absoluteString.js} ${JSON.stringify(headers, null, 2)}`);
 
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
