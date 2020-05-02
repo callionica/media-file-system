@@ -92,7 +92,7 @@ function WebSchemeHandler(config) {
         let options = $.NSDataReadingMappedIfSafe;
         
         let data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
-        let expectedContentLength = data.length;
+        let expectedContentLength = fileSize;
 
         // console.log(`${path.js}, ${extension.js}`);
 
