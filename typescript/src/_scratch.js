@@ -120,15 +120,20 @@ debugger;
         console.log(JSON.stringify(ObjC.unwrap(attrs), null, 2));
 
         let dataURL = $.NSURL.fileURLWithPath(path);
+
+        let dataRequest = $.NSMutableURLRequest.alloc.initWithURL(dataURL);
+        dataRequest.setValueForHTTPHeaderField("bytes=0-1023", "Range"); // 1609656
+
         let session = createTaskSession(task);
         //let dataTask = session.dataTaskWithRequest(request);
         //let dataTask = session.dataTaskWithURL(dataURL);
 
         function handler(data, response, error) {
-            console.log("HANDLER");
+            console.log("HANDLER", data.length, (error.isNil() ? "No error" : error.localizedDescription.js));
         }
 
-        let dataTask = session.dataTaskWithURLCompletionHandler(dataURL, handler);
+        let dataTask = session.dataTaskWithRequestCompletionHandler(dataRequest, handler);
+        //let dataTask = session.dataTaskWithURLCompletionHandler(dataURL, handler);
         dataTask.resume;
         return;
 
