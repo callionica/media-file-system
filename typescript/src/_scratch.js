@@ -1,3 +1,6 @@
+var s;
+debugger;
+
 (function () {
 
     let app = Application.currentApplication();
@@ -88,17 +91,15 @@
         return result;
     }
 
-    function createSession(delegate) {
+    function createSession(delegate = $()) {
         let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
         configuration.waitsForConnectivity = true
         return $.NSURLSession.sessionWithConfigurationDelegateDelegateQueue(configuration, delegate, $());
     }
 
-    let s;
-
     function createTaskSession(task) {
         let delegate = createTaskDelegate(task);
-        let session = createSession(delegate);
+        let session = createSession(); //delegate);
         s = session; // TODO
         return session;
     }
@@ -121,7 +122,13 @@
         let dataURL = $.NSURL.fileURLWithPath(path);
         let session = createTaskSession(task);
         //let dataTask = session.dataTaskWithRequest(request);
-        let dataTask = session.dataTaskWithURL(dataURL);
+        //let dataTask = session.dataTaskWithURL(dataURL);
+
+        function handler(data, response, error) {
+            console.log("HANDLER");
+        }
+
+        let dataTask = session.dataTaskWithURLCompletionHandler(dataURL, handler);
         dataTask.resume;
         return;
 
