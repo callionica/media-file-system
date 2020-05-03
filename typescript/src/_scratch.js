@@ -1,3 +1,52 @@
+(function () {
+
+    let app = Application.currentApplication();
+    app.includeStandardAdditions = true;
+
+    ObjC.import('Foundation');
+    ObjC.import('Cocoa');
+    ObjC.import('AppKit');
+
+    console.log($.NSThread.currentThread.isMainThread);
+
+    let queue = $.NSOperationQueue.alloc.init;
+    queue.maxConcurrentOperations = 4;
+
+    function log(contents) {
+        let path = `/Users/user/Desktop/__current/log.txt`;
+        let s = $(contents);
+        s.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
+    }
+
+    function op(t, cb) {
+        // $.NSBlockOperation.blockOperationWithBlock(function () {
+        //     console.log("block");
+        // });
+
+        let text = $(t);
+        queue.addOperationWithBlock(function () {
+            try {
+                console.log("block");
+                log(`${$.NSThread.currentThread.isMainThread}`);
+                console.log(text.js);
+                console.log("block");
+                let resultInt = 32;
+                let result = $("result");
+                $.NSOperationQueue.mainQueue.addOperationWithBlock(() => {
+                    cb(result.js, resultInt);
+                });
+            } catch (e) {
+                console.log("error");
+            }
+        });
+    }
+
+    op("Data", (result, value) => { console.log(value, result, `${$.NSThread.currentThread.isMainThread}`); });
+
+})();
+
+throw 1;
+
 function readData(path, offset, length) {
     function seek(handle, offset) {
         if (handle.seekToOffsetError) {
@@ -204,7 +253,7 @@ debugger;
     let webView = $();
     let task = createMockWKTask();
     task.request = $.NSURLRequest.requestWithURL($.NSURL.URLWithString(url));
-    
+
     /*{
         request: $.NSURLRequest.requestWithURL($.NSURL.URLWithString(url)),
         didReceiveResponse: (response) => { log(response) },
