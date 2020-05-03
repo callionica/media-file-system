@@ -7,6 +7,71 @@
     ObjC.import('Cocoa');
     ObjC.import('AppKit');
 
+    function DataReader(workQ, resultQ) {
+        workQ = workQ || $.NSOperationQueue.alloc.init;
+        resultQ = resultQ || $.NSOperationQueue.currentQueue || $.NSOperationQueue.mainQueue;
+
+        function readData(path, offset, length, cb) {
+            path = $(path);
+
+            workQ.addOperationWithBlock(function () {
+                try {
+                    function readData(path, offset, length) {
+                        function seek(handle, offset) {
+                            if (handle.seekToOffsetError) {
+                                let error = $();
+                                return handle.seekToOffsetError(offset, error);
+                            }
+                
+                            handle.seekToFileOffset(offset);
+                            return (handle.offsetInFile == offset);
+                        }
+                
+                        function read(handle, length) {
+                            if (handle.readDataUpToLengthError) {
+                                let error = $();
+                                return handle.readDataUpToLengthError(length, error);
+                            }
+                
+                            return handle.readDataOfLength(length);
+                        }
+                
+                        let ns = $(path);
+                        let handle = $.NSFileHandle.fileHandleForReadingAtPath(ns);
+                        let error = $();
+                        if (seek(handle, offset)) {
+                            return read(handle, length);
+                        }
+                    }
+                    let result = readData(path, offset, length);
+                    resultQ.addOperationWithBlock(() => {
+                        cb(result);
+                    });
+                } catch (e) {
+
+                }
+            });
+        }
+
+        return { readData };
+    }
+
+    let dr = DataReader();
+    dr.readData("/Users/user/Desktop/__current/In the Dark.jpg", 0, 1024, (data)=>{ console.log(data.length); });
+
+})();
+
+throw 1;
+
+(function () {
+
+    let app = Application.currentApplication();
+    app.includeStandardAdditions = true;
+
+    ObjC.import('Foundation');
+    ObjC.import('Cocoa');
+    ObjC.import('AppKit');
+
     console.log($.NSThread.currentThread.isMainThread);
 
     let queue = $.NSOperationQueue.alloc.init;
