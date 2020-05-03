@@ -8,6 +8,7 @@
 // scheme allows us to provide a default document (index.html) when the URL represents a folder.
 // It also allows us to load files from multiple disks without hitting the security blocks associated
 // with the file:// scheme.
+
 function WebSchemeHandler(config) {
 
     function alert(text, informationalText) {
@@ -118,6 +119,11 @@ function WebSchemeHandler(config) {
         const maximumRangeLength = 8 * MB;
         const maximumFileSize = 16 * MB;
 
+        let first = 0;
+        let length = Math.min(fileSize, maximumFileSize);
+        let last = length - 1;
+        let status = (length == fileSize) ? 200 : 206;
+
         let range = request.valueForHTTPHeaderField("Range");
         if (!range.isNil()) {
             // We are dealing with a range request
@@ -128,9 +134,10 @@ function WebSchemeHandler(config) {
             // TODO - other validation
 
             if (m) {
-                let first = parseInt(m.groups.first, 10);
-                let last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
-                let length = (last - first) + 1;
+                status = 206;
+                first = parseInt(m.groups.first, 10);
+                last = (m.groups.last === undefined) ? (fileSize - 1) : parseInt(m.groups.last, 10);
+                length = (last - first) + 1;
 
                 // Trim large requests to an acceptable size
                 // and increase the size of small requests
@@ -147,15 +154,10 @@ function WebSchemeHandler(config) {
                 if (fileSize <= last) {
                     last = fileSize - 1;
                 }
-
-                return { first, last, length };
             }
         }
 
-        // If we get a non-range request for a large file, we treat it like a range request
-        if (maximumFileSize < fileSize) {
-            return { first: 0, last: maximumFileSize - 1, length: maximumFileSize };
-        }
+        return { status, first, last, length, fileSize };
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
@@ -167,7 +169,6 @@ function WebSchemeHandler(config) {
         let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(path, error);
         let fileSize = attrs.fileSize;
 
-        let status = 200;
         let data;
 
         let headers = {
@@ -178,31 +179,19 @@ function WebSchemeHandler(config) {
         };
 
         let range = getRange(task.request, fileSize);
-        if (range !== undefined) {
-            let handledRange = false;
-            let { first, last, length } = range;
-            if ((first <= last) && (last < fileSize)) {
 
-                status = 206;
-                headers["Content-Length"] = `${length}`;
-                headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
+        let { status, first, last, length /*, fileSize */ } = range;
+        if ((first <= last) && (last < fileSize)) {
 
-                data = readData(path, first, length);
+            headers["Content-Length"] = `${length}`;
+            headers["Content-Range"] = `bytes ${first}-${last}/${fileSize}`
 
-                handledRange = true;
-            }
-
-            if (!handledRange) {
-                status = 416;
-                headers["Content-Length"] = `0`;
-                headers["Content-Range"] = `bytes */${data.length}`
-                data = $.NSData.data;
-            }
-
+            data = readData(path, first, length);
         } else {
-
-            let options = $.NSDataReadingMappedIfSafe;
-            data = $.NSData.dataWithContentsOfFileOptionsError(path, options, error);
+            status = 416;
+            headers["Content-Length"] = `0`;
+            headers["Content-Range"] = `bytes */${fileSize}`
+            data = $.NSData.data;
         }
 
         let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, status, $(), $(headers));
@@ -212,6 +201,12 @@ function WebSchemeHandler(config) {
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
         task.didFinish();
+    }
+
+    function WKURLSchemeHandler_webViewStartURLSchemeTaskQ(webView, task) {
+        queue.addOperationWithBlock(function () {
+            WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
+        });
     }
 
     function WKURLSchemeHandler_webViewStopURLSchemeTask(webView, task) {
