@@ -209,6 +209,7 @@ function WebSchemeHandler(config) {
             try {
                 WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
             } catch (e) {
+                // task.didFailWithError($.NSError.errorWithDomainCodeUserInfo($.kCFErrorDomainCFNetwork, $.kCFURLErrorUnknown, $()));
                 console.log(e);
             }
         });

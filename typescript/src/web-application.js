@@ -22,8 +22,8 @@ function createMenu() {
         "f", $.NSCommandKeyMask | $.NSControlKeyMask
     ));
 
-    // 0 - App; 1 - File; 2 - View
-    insertMenuAtIndex(mainMenu, menuView, 2);
+    // 0 - App; 1 - File; 2 - Edit, 3 - View
+    insertMenuAtIndex(mainMenu, menuView, 3);
 }
 
 function Window(rect) {

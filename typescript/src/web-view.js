@@ -16,7 +16,7 @@ function WebView(url, scheme) {
         webview.evaluateJavaScriptCompletionHandler(js, (result, error) => { });
     }
 
-    function EnableEvalInHost(config) {
+    function enableEvalInHost(config) {
         let handlerName = "eval";
 
         let className = "CalliScriptMessageHandler";
@@ -104,7 +104,7 @@ function evalInHostResponse(responseID, jsonResult, error) {
 
     let rect = $.NSZeroRect
     let config = $.WKWebViewConfiguration.alloc.init
-    EnableEvalInHost(config);
+    enableEvalInHost(config);
 
     if (scheme !== undefined) {
         config.setURLSchemeHandlerForURLScheme(scheme.handler, scheme.name);
