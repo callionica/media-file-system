@@ -10,6 +10,7 @@
 // with the file:// scheme.
 
 function WebSchemeHandler(config) {
+    let workQ = $.NSOperationQueue.alloc.init;
 
     function alert(text, informationalText) {
         if (text && text.js) text = text.js;
@@ -204,8 +205,12 @@ function WebSchemeHandler(config) {
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTaskQ(webView, task) {
-        queue.addOperationWithBlock(function () {
-            WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
+        workQ.addOperationWithBlock(function () {
+            try {
+                WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
+            } catch (e) {
+                console.log(e);
+            }
         });
     }
 
@@ -221,7 +226,7 @@ function WebSchemeHandler(config) {
             methods: {
                 'webView:startURLSchemeTask:': {
                     types: ["void", ["id", "id"]],
-                    implementation: WKURLSchemeHandler_webViewStartURLSchemeTask,
+                    implementation: WKURLSchemeHandler_webViewStartURLSchemeTaskQ,
                 },
                 'webView:stopURLSchemeTask:': {
                     types: ["void", ["id", "id"]],
