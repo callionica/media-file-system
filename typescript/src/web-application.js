@@ -55,7 +55,7 @@ function WindowDelegate() {
 
 function WebViewWindow(url) {
     let [width, height] = [1024, 768];
-    let scheme = { name: "media-file", handler: WebSchemeHandler() };
+    let scheme = { name: "file-system", handler: WebSchemeHandler() };
     let webView = WebView(url, scheme);
     webView.frame = $.NSMakeRect(0, 0, width, height);
     webView.autoresizingMask = $.NSViewWidthSizable | $.NSViewHeightSizable;
@@ -93,7 +93,7 @@ function main(mainPage, host) {
 
     createMenu();
 
-    var MyWindow = WebViewWindow(`media-file://${host}${mainPage}`);
+    var MyWindow = WebViewWindow(`file-system://${host}${mainPage}`);
     MyWindow.makeKeyAndOrderFront(null);
     MyWindow.toggleFullScreen(null);
 }

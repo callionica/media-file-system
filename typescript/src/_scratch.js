@@ -140,7 +140,7 @@ function readData(path, offset, length) {
     }
 }
 
-let url = "media-file://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
+let url = "file-system://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
 let path = "/Users/user/Desktop/__current/marple/02-1.ts";
 
 let data = readData(path, 63, 64);
@@ -313,8 +313,8 @@ debugger;
         console.log(x);
     }
 
-    //let url = "media-file://callionica.com/Volumes/B128/TV/Blue%20Planet%20Revisited/Blue%20Planet%20Revisited%20-%20Series%201%20-%201.%20A%20Sharks%20Tale.ts";
-    let url = "media-file://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
+    //let url = "file-system://callionica.com/Volumes/B128/TV/Blue%20Planet%20Revisited/Blue%20Planet%20Revisited%20-%20Series%201%20-%201.%20A%20Sharks%20Tale.ts";
+    let url = "file-system://callionica.com/Users/user/Desktop/__current/marple/02-1.ts";
     let webView = $();
     let task = createMockWKTask();
     task.request = $.NSURLRequest.requestWithURL($.NSURL.URLWithString(url));
