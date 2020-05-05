@@ -9,7 +9,7 @@
 // the web pages that you load in the web view.
 
 // Web pages hosted by this webview can call evalInHost(js) which returns a Promise
-function WebView(url, scheme) {
+function WebView(url, schemes) {
     let webview;
 
     function evalInGuest(js) {
@@ -106,8 +106,10 @@ function evalInHostResponse(responseID, jsonResult, error) {
     let config = $.WKWebViewConfiguration.alloc.init
     enableEvalInHost(config);
 
-    if (scheme !== undefined) {
-        config.setURLSchemeHandlerForURLScheme(scheme.handler, scheme.name);
+    if (schemes !== undefined) {
+        for (let scheme of schemes) {
+            config.setURLSchemeHandlerForURLScheme(scheme.handler, scheme.name);
+        }
     }
 
     // config.preferences.setValueForKey(ObjC.wrap(true), ObjC.wrap("allowFileAccessFromFileURLs"));

@@ -1,5 +1,15 @@
 // ALL RIGHTS RESERVED
 
+function alert(text, informationalText) {
+    if (text && text.js) text = text.js;
+    if (informationalText && informationalText.js) informationalText = informationalText.js;
+    var options = {};
+    if (informationalText) options.message = informationalText;
+    let app = Application.currentApplication();
+    app.includeStandardAdditions = true;
+    app.displayAlert(text, options);
+}
+
 function createMenu() {
     function MenuItem(title, action, key, modifiers = $.NSCommandKeyMask) {
         let result = $.NSMenuItem.alloc.initWithTitleActionKeyEquivalent(title, action, key);
@@ -55,8 +65,8 @@ function WindowDelegate() {
 
 function WebViewWindow(url) {
     let [width, height] = [1024, 768];
-    let scheme = { name: "file-system", handler: WebSchemeHandlerFileSystem() };
-    let webView = WebView(url, scheme);
+    let schemes = [{ name: "file-system", handler: WebSchemeHandlerFileSystem() }];
+    let webView = WebView(url, schemes);
     webView.frame = $.NSMakeRect(0, 0, width, height);
     webView.autoresizingMask = $.NSViewWidthSizable | $.NSViewHeightSizable;
     let rect = $.NSMakeRect(0, 0, width, height);

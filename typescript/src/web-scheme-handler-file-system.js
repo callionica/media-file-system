@@ -21,16 +21,6 @@
 function WebSchemeHandlerFileSystem() {
     let workQ = $.NSOperationQueue.alloc.init;
 
-    function alert(text, informationalText) {
-        if (text && text.js) text = text.js;
-        if (informationalText && informationalText.js) informationalText = informationalText.js;
-        var options = {};
-        if (informationalText) options.message = informationalText;
-        let app = Application.currentApplication();
-        app.includeStandardAdditions = true;
-        app.displayAlert(text, options);
-    }
-
     let logCount = 0;
     function log(contents) {
         let path = `/Users/user/Desktop/__current/log${++logCount}.txt`;
