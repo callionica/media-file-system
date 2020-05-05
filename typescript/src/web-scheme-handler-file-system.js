@@ -9,7 +9,8 @@
 // It also allows us to load files from multiple disks without hitting the security blocks associated
 // with the file:// scheme.
 
-function WebSchemeHandlerFileSystem(config) {
+// Typically this handler will be registered and used as "file-system://"
+function WebSchemeHandlerFileSystem() {
     let workQ = $.NSOperationQueue.alloc.init;
 
     function alert(text, informationalText) {
