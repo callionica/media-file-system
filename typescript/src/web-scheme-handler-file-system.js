@@ -9,6 +9,14 @@
 // It also allows us to load files from multiple disks without hitting the security blocks associated
 // with the file:// scheme.
 
+// This implementation handles Range requests (partially).
+// Currently all requests can return a partial response (code 216)
+// even if the request doesn't contain a Range header.
+// If a file is larger than 16 MB and there is no Range header, we'll return the first 16 MB only
+// If the request contains a Range larger than 8 MB, we'll return the first 8 MB only
+// If the request contains a Range smaller than 1 MB, we'll return a full 1 MB from the start of the range
+// Otherwise, we return the whole of the file or the whole of the requested range
+
 // Typically this handler will be registered and used as "file-system://"
 function WebSchemeHandlerFileSystem() {
     let workQ = $.NSOperationQueue.alloc.init;
@@ -107,9 +115,7 @@ function WebSchemeHandlerFileSystem() {
             return handle.readDataOfLength(length);
         }
 
-        let ns = $(path);
-        let handle = $.NSFileHandle.fileHandleForReadingAtPath(ns);
-        let error = $();
+        let handle = $.NSFileHandle.fileHandleForReadingAtPath($(path));
         if (seek(handle, offset)) {
             return read(handle, length);
         }
@@ -220,7 +226,7 @@ function WebSchemeHandlerFileSystem() {
         // Nothing to do here
     }
 
-    let className = "CalliURLSchemeHandler";
+    let className = "CalliURLSchemeHandlerFileSystem";
     if (!$[className]) {
         ObjC.registerSubclass({
             name: className,
