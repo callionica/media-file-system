@@ -3,6 +3,10 @@
 // DO NOT USE THIS SCHEME HANDLER IF YOU EVER LOAD UNTRUSTED CONTENT IN THE WEBVIEW.
 // THIS SCHEME HANDLER GIVES TOTAL ACCESS TO THE LOCAL FILE SYSTEM.
 
+// IT DOES NOT MATTER IF THE PAGE IS FROM ANOTHER ORIGIN, WE INCLUDE THE
+// Access-Control-Allow-Origin: *
+// RESPONSE HEADER TO ALLOW CROSS-ORIGIN REQUESTS TO SUCCEED
+
 // An implementation of WKURLSchemeHandler that gives more flexibility than the file:// scheme
 // when using WKWebView to read files from the local file system. For example, using a custom
 // scheme allows us to provide a default document (index.html) when the URL represents a folder.
@@ -171,6 +175,7 @@ function WebSchemeHandlerFileSystem() {
 
         let headers = {
             "Content-Type": `${mimeType}; charset=utf-8`,
+            "Access-Control-Allow-Origin": "*",
             "Cache-Control": "no-cache",
             "Accept-Ranges": "bytes",
             "Content-Length": `${fileSize}`,
@@ -198,7 +203,7 @@ function WebSchemeHandlerFileSystem() {
 
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
-        task.didFinish();
+        task.didFinish;
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTaskQ(webView, task) {
