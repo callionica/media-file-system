@@ -306,7 +306,7 @@ debugger;
 
         task.didReceiveResponse(httpResponse);
         task.didReceiveData(data);
-        task.didFinish();
+        task.didFinish;
     }
 
     function log(x) {
