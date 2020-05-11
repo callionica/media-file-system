@@ -65,7 +65,10 @@ function WindowDelegate() {
 
 function WebViewWindow(url) {
     let [width, height] = [1024, 768];
-    let schemes = [{ name: "file-system", handler: WebSchemeHandlerFileSystem() }];
+    let schemes = [
+        { name: "file-system", handler: WebSchemeHandlerFileSystem() },
+        { name: "web", handler: WebSchemeHandlerWeb() }
+    ];
     let webView = WebView(url, schemes);
     webView.frame = $.NSMakeRect(0, 0, width, height);
     webView.autoresizingMask = $.NSViewWidthSizable | $.NSViewHeightSizable;
