@@ -100,13 +100,16 @@ function main(mainPage, host) {
         mainPage = path + "$app.html";
     }
 
-    if (!mainPage.startsWith("/")) {
-        throw "File paths must start with '/'";
+    let url;
+    if (mainPage.startsWith("/")) {
+        url = `file-system://${host}${mainPage}`;
+    } else {
+        url = mainPage;
     }
 
     createMenu();
 
-    var MyWindow = WebViewWindow(`file-system://${host}${mainPage}`);
+    var MyWindow = WebViewWindow(url);
     MyWindow.makeKeyAndOrderFront(null);
     MyWindow.toggleFullScreen(null);
 }

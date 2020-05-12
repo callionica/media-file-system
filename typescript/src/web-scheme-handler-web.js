@@ -7,12 +7,24 @@
 // but adds CORS headers to the response to allow cross-origin fetch to work
 // Access-Control-Allow-Origin: *
 function WebSchemeHandlerWeb() {
-    let workQ = $.NSOperationQueue.alloc.init;
+    let workQueue = $.NSOperationQueue.alloc.init;
+    let session = createSession();
+
+    // let logCount = 0;
+    // function log(contents) {
+    //     let path = `/Users/user/Desktop/__current/log${++logCount}.txt`;
+    //     let s = $(contents);
+    //     s.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
+    // }
 
     function createSession() {
         let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
         configuration.waitsForConnectivity = true
         return $.NSURLSession.sessionWithConfiguration(configuration);
+    }
+
+    function createDataTask(url, handler) {
+        return session.dataTaskWithURLCompletionHandler(url, handler);
     }
 
     function changeScheme(url, scheme) {
@@ -22,12 +34,21 @@ function WebSchemeHandlerWeb() {
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
-        // TODO - would be better with a task delegate to feed data through incrementally
+        // Could be better with a task delegate to feed data through incrementally
+        // but given our use case, doing a one-shot download and passthrough seems simpler
+
         let url = task.request.URL;
-    
+        // console.log(`${url.absoluteString.js}`);
+
         function handler(data, response, error) {
-            if (error) {
-                task.didFailWithError(error);
+            if (!error.isNil()) {
+                // log(`Error`);
+                // log(`${data} ${response} ${error}`);
+                try {
+                    task.didFailWithError(error);
+                } catch (e) {
+                    // log("Error ${e}");
+                }
                 return;
             }
 
@@ -38,6 +59,8 @@ function WebSchemeHandlerWeb() {
                 "Access-Control-Allow-Origin": "*",
             };
 
+            // console.log(`${Object.entries(headers)}`);
+
             let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, statusCode, $(), $(headers));
 
             task.didReceiveResponse(httpResponse);
@@ -45,14 +68,14 @@ function WebSchemeHandlerWeb() {
             task.didFinish;
         }
 
-        let dataURL = changeScheme(webURL, "https");
-        let session = createSession();
-        let dataTask = session.dataTaskWithURLCompletionHandler(dataURL, handler);
+        let dataURL = changeScheme(url, "https");
+        // console.log(`${dataURL.absoluteString.js}`);
+        let dataTask = createDataTask(dataURL, handler);
         dataTask.resume;
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTaskQ(webView, task) {
-        workQ.addOperationWithBlock(function () {
+        workQueue.addOperationWithBlock(function () {
             try {
                 WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
             } catch (e) {
