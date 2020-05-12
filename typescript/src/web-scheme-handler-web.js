@@ -53,7 +53,15 @@ function WebSchemeHandlerWeb(cache = $.NSURLCache.sharedURLCache) {
                 "Access-Control-Allow-Origin": "*",
             };
 
-            let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, statusCode, $(), $(headers));
+            // Don't return STS to caller
+            delete headers["Strict-Transport-Security"];
+
+            // console.log(Object.values(headers).length, Object.keys(headers), JSON.stringify(headers, null, 2));
+            // console.log(response.allHeaderFields.description.js);
+
+            let httpHeaders = $(headers);
+            // console.log(httpHeaders.description.js);
+            let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, statusCode, $(), httpHeaders);
 
             task.didReceiveResponse(httpResponse);
             task.didReceiveData(data);
