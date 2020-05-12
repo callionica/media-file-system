@@ -17,7 +17,10 @@ function WebSchemeHandlerWeb() {
     }
 
     function createDataTask(url, handler) {
-        return session.dataTaskWithURLCompletionHandler(url, handler);
+        let policy = $.NSURLRequestUseProtocolCachePolicy;
+        let timeout = 60.0; // seconds
+        let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
+        return session.dataTaskWithRequestCompletionHandler(request, handler);
     }
 
     function changeScheme(url, scheme) {
