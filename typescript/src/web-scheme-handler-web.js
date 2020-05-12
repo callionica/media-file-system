@@ -10,13 +10,6 @@ function WebSchemeHandlerWeb() {
     let workQueue = $.NSOperationQueue.alloc.init;
     let session = createSession();
 
-    // let logCount = 0;
-    // function log(contents) {
-    //     let path = `/Users/user/Desktop/__current/log${++logCount}.txt`;
-    //     let s = $(contents);
-    //     s.writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, null);
-    // }
-
     function createSession() {
         let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
         configuration.waitsForConnectivity = true
@@ -38,16 +31,13 @@ function WebSchemeHandlerWeb() {
         // but given our use case, doing a one-shot download and passthrough seems simpler
 
         let url = task.request.URL;
-        // console.log(`${url.absoluteString.js}`);
 
         function handler(data, response, error) {
             if (!error.isNil()) {
-                // log(`Error`);
-                // log(`${data} ${response} ${error}`);
                 try {
                     task.didFailWithError(error);
                 } catch (e) {
-                    // log("Error ${e}");
+                    console.log(e);
                 }
                 return;
             }
@@ -59,8 +49,6 @@ function WebSchemeHandlerWeb() {
                 "Access-Control-Allow-Origin": "*",
             };
 
-            // console.log(`${Object.entries(headers)}`);
-
             let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(url, statusCode, $(), $(headers));
 
             task.didReceiveResponse(httpResponse);
@@ -69,7 +57,6 @@ function WebSchemeHandlerWeb() {
         }
 
         let dataURL = changeScheme(url, "https");
-        // console.log(`${dataURL.absoluteString.js}`);
         let dataTask = createDataTask(dataURL, handler);
         dataTask.resume;
     }
