@@ -55,7 +55,7 @@ function writeJSON(path: string, value: any) {
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 
-//type NSFetchReturn = {data: any, response: any};
+type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any };
 
 class FetchStore {
     path: string;
@@ -83,7 +83,8 @@ class FetchStore {
     }
 
     // NS implementation
-    async fetch_(url: any, dataPath: string): Promise<FetchStoreResult> {
+    async fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
+
         function createDataTask(session: any, url: any, handler: any) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
             let timeout = 60.0; // seconds
@@ -99,32 +100,37 @@ class FetchStore {
             return headers;
         }
 
+        let { path, nsurl, dataPath } = locations;
         let promise = new Promise<FetchStoreResult>((resolve, reject) => {
             function handler(data: any, response: any, error: any) {
                 if (!error.isNil()) {
                     reject(error);
                 } else {
+                    createDirectory(path);
+
                     data.writeToFileAtomically(dataPath, true);
+
                     let headers = getHeaders(response);
                     writeJSON(dataPath + ".headers", headers);
+
                     let retrievalDate = new Date();
                     let result = { path: dataPath, headers, retrievalDate };
                     resolve(result);
                 }
             }
 
-            let dataTask = createDataTask(this.session, url, handler);
+            let dataTask = createDataTask(this.session, nsurl, handler);
             dataTask.resume;
         });
 
         return promise;
     }
 
-    async fetchStore(url: string, policy: FetchStorePolicy = FetchStorePolicy24): Promise<FetchStoreResult> {
-        // TODO - handle queries
+    getLocations(url: string): { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any } {
         let nsurl = $.NSURL.URLWithString(url);
         let group = `${nsurl.host.js}/${nsurl.scheme.js}`;
         let item = `${nsurl.path.js}`;
+
         if (!item.startsWith("/")) {
             item = "/" + item;
         }
@@ -143,6 +149,24 @@ class FetchStore {
         let extension = (nsurl.pathExtension.length == 0) ? "data" : `${nsurl.pathExtension.js}`;
         let dataPath = path + `data.${extension}`;
         let headersPath = dataPath + ".headers";
+
+        return { path, dataPath, headersPath, extension, nsurl };
+    }
+
+    // fetch will always make a request through the HTTP system
+    // even if the document already exists in the store.
+    // The request may not make it all the way to the server if the document is
+    // the HTTP cache and still valid.
+    async fetch(url: string): Promise<FetchStoreResult> {
+        return this.fetch_(this.getLocations(url));
+    }
+
+    // fetchStore will always return the document in the store
+    // unless the document does not exist or could not be read
+    async fetchStore(url: string, policy: FetchStorePolicy = FetchStorePolicy24): Promise<FetchStoreResult> {
+        // TODO - handle queries
+        let locations = this.getLocations(url);
+        let { path, dataPath, headersPath, extension, nsurl } = locations;
 
         let makeRequest = true;
         let returnLater = true;
@@ -177,7 +201,7 @@ class FetchStore {
         let fetchPromise: Promise<FetchStoreResult> = Promise.reject(new Error("Unexpected"));
 
         if (makeRequest) {
-            fetchPromise = this.fetch_(nsurl, dataPath);
+            fetchPromise = this.fetch_(locations);
         }
 
         if (!returnLater && result) {
