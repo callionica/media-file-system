@@ -5,20 +5,6 @@
 // Documents in the FetchStore can be retrieved even if no network connection is available
 // and even if the connection is available, but the server returns an error.
 
-type FetchStoreAge = number; // milliseconds
-
-type FetchStorePolicy = {
-    returnIfYoungerThan: FetchStoreAge;
-    refreshIfOlderThan: FetchStoreAge;
-};
-
-// Return stored content if downloaded in last 24 hours
-// otherwise contact the server and return the newly downloaded data
-const FetchStorePolicy24 = {
-    returnIfYoungerThan: 24 * 60 * 60 * 1000,
-    refreshIfOlderThan: 24 * 60 * 60 * 1000,
-};
-
 type FetchStoreResult = {
     path: string;
     headers: any;
@@ -82,7 +68,6 @@ class FetchStore {
         this.session = createSession(cache);
     }
 
-    // NS implementation
     async fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
 
         function createDataTask(session: any, url: any, handler: any) {
@@ -127,6 +112,7 @@ class FetchStore {
     }
 
     getLocations(url: string): { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any } {
+        // TODO - handle queries
         let nsurl = $.NSURL.URLWithString(url);
         let group = `${nsurl.host.js}/${nsurl.scheme.js}`;
         let item = `${nsurl.path.js}`;
@@ -156,19 +142,19 @@ class FetchStore {
     // fetch will always make a request through the HTTP system
     // even if the document already exists in the store.
     // The request may not make it all the way to the server if the document is
-    // the HTTP cache and still valid.
+    // in the HTTP cache and still valid.
     // A successful response updates the document in the store.
     async fetch(url: string): Promise<FetchStoreResult> {
         return this.fetch_(this.getLocations(url));
     }
 
-    // fetchStore will always return the document in the store
-    // unless the document does not exist or could not be read
-    // in which case it behaves like fetch
+    // fetchStore will always return the document found in the store
+    // unless the document does not exist or could not be read,
+    // in which case it behaves like fetch.
     async fetchStore(url: string): Promise<FetchStoreResult> {
-        // TODO - handle queries
+        
         let locations = this.getLocations(url);
-        let { path, dataPath, headersPath, extension, nsurl } = locations;
+        let { nsurl, path, dataPath, headersPath } = locations;
 
         let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
         if (dataExists) {
@@ -191,6 +177,6 @@ class FetchStore {
         //   The document attributes could not be read
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
-        return this.fetch_(locations);;
+        return this.fetch_(locations);
     }
 }

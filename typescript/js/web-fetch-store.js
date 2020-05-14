@@ -5,16 +5,33 @@
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
 // Documents in the FetchStore can be retrieved even if no network connection is available
 // and even if the connection is available, but the server returns an error.
-// Return stored content if downloaded in last 24 hours
-// otherwise contact the server and return the newly downloaded data
-const FetchStorePolicy24 = {
-    returnIfYoungerThan: 24 * 60 * 60 * 1000,
-    refreshIfOlderThan: 24 * 60 * 60 * 1000,
-};
 function createDirectory(path) {
     var d = $.NSDictionary.alloc.init;
     var url = $.NSURL.alloc.initFileURLWithPath(path);
     $.NSFileManager.defaultManager.createDirectoryAtURLWithIntermediateDirectoriesAttributesError(url, true, d, null);
+}
+// Read a UTF8 file and parse it as JSON
+// Any failures are ignored and the default value is returned instead
+function readJSON(path, _default = {}) {
+    try {
+        let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
+        let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
+        }
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
+        }
+        return JSON.parse(contents.js);
+    }
+    catch (e) {
+    }
+    return _default;
+}
+function writeJSON(path, value) {
+    let json = JSON.stringify(value, null, 2);
+    let error = $();
+    $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 class FetchStore {
     constructor(path) {
@@ -23,11 +40,54 @@ class FetchStore {
         }
         createDirectory(path);
         this.path = path;
+        let cache = $.NSURLCache.sharedURLCache;
+        function createSession(cache) {
+            let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
+            configuration.waitsForConnectivity = true;
+            configuration.URLCache = cache;
+            return $.NSURLSession.sessionWithConfiguration(configuration);
+        }
+        this.session = createSession(cache);
     }
-    async fetchStore(url, policy = FetchStorePolicy24) {
+    async fetch_(locations) {
+        function createDataTask(session, url, handler) {
+            let policy = $.NSURLRequestUseProtocolCachePolicy;
+            let timeout = 60.0; // seconds
+            let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
+            return session.dataTaskWithRequestCompletionHandler(request, handler);
+        }
+        function getHeaders(response) {
+            let headers = Object.assign({}, (response.allHeaderFields.js));
+            for (let [key, value] of Object.entries(headers)) {
+                headers[key] = ObjC.unwrap(value);
+            }
+            return headers;
+        }
+        let { nsurl, path, dataPath, headersPath } = locations;
+        let promise = new Promise((resolve, reject) => {
+            function handler(data, response, error) {
+                if (!error.isNil()) {
+                    reject(error);
+                }
+                else {
+                    createDirectory(path);
+                    data.writeToFileAtomically(dataPath, true);
+                    let headers = getHeaders(response);
+                    writeJSON(headersPath, headers);
+                    let retrievalDate = new Date();
+                    let result = { path: dataPath, headers, retrievalDate };
+                    resolve(result);
+                }
+            }
+            let dataTask = createDataTask(this.session, nsurl, handler);
+            dataTask.resume;
+        });
+        return promise;
+    }
+    getLocations(url) {
         // TODO - handle queries
         let nsurl = $.NSURL.URLWithString(url);
-        let group = `${nsurl.scheme.js}/${nsurl.host.js}`;
+        let group = `${nsurl.host.js}/${nsurl.scheme.js}`;
         let item = `${nsurl.path.js}`;
         if (!item.startsWith("/")) {
             item = "/" + item;
@@ -40,10 +100,47 @@ class FetchStore {
         }
         let path = this.path + `${group}${item}`;
         createDirectory(path);
-        let extension = nsurl.pathExtension.isNil() ? ".data" : `.${nsurl.pathExtension.js}`;
-        let dataPath = path + `data${extension}`;
-        let metadataPath = path + `metadata.txt`;
-        return { path: dataPath, retrievalDate: new Date() };
+        let extension = (nsurl.pathExtension.length == 0) ? "data" : `${nsurl.pathExtension.js}`;
+        let dataPath = path + `data.${extension}`;
+        let headersPath = dataPath + ".headers";
+        return { path, dataPath, headersPath, extension, nsurl };
+    }
+    // fetch will always make a request through the HTTP system
+    // even if the document already exists in the store.
+    // The request may not make it all the way to the server if the document is
+    // in the HTTP cache and still valid.
+    // A successful response updates the document in the store.
+    async fetch(url) {
+        return this.fetch_(this.getLocations(url));
+    }
+    // fetchStore will always return the document found in the store
+    // unless the document does not exist or could not be read,
+    // in which case it behaves like fetch.
+    async fetchStore(url) {
+        let locations = this.getLocations(url);
+        let { nsurl, path, dataPath, headersPath } = locations;
+        let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
+        if (dataExists) {
+            try {
+                let error = $();
+                let retrievalDate = new Date("2001-01-01");
+                let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
+                if (attrs && error.isNil()) {
+                    retrievalDate = attrs.fileModificationDate.js;
+                }
+                let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
+                return { path: dataPath, headers, retrievalDate };
+            }
+            catch (e) {
+            }
+        }
+        // If we're here, one of the following is true:
+        //   The document doesn't exist in the store
+        //   The document attributes could not be read
+        //   Some unexpected error
+        // In any case, we'll make a request and create/refresh the document
+        return this.fetch_(locations);
+        ;
     }
 }
 //# sourceMappingURL=web-fetch-store.js.map
