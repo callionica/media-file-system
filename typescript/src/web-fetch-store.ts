@@ -100,7 +100,7 @@ class FetchStore {
             return headers;
         }
 
-        let { path, nsurl, dataPath } = locations;
+        let { nsurl, path, dataPath, headersPath } = locations;
         let promise = new Promise<FetchStoreResult>((resolve, reject) => {
             function handler(data: any, response: any, error: any) {
                 if (!error.isNil()) {
@@ -111,7 +111,7 @@ class FetchStore {
                     data.writeToFileAtomically(dataPath, true);
 
                     let headers = getHeaders(response);
-                    writeJSON(dataPath + ".headers", headers);
+                    writeJSON(headersPath, headers);
 
                     let retrievalDate = new Date();
                     let result = { path: dataPath, headers, retrievalDate };
@@ -157,21 +157,18 @@ class FetchStore {
     // even if the document already exists in the store.
     // The request may not make it all the way to the server if the document is
     // the HTTP cache and still valid.
+    // A successful response updates the document in the store.
     async fetch(url: string): Promise<FetchStoreResult> {
         return this.fetch_(this.getLocations(url));
     }
 
     // fetchStore will always return the document in the store
     // unless the document does not exist or could not be read
-    async fetchStore(url: string, policy: FetchStorePolicy = FetchStorePolicy24): Promise<FetchStoreResult> {
+    // in which case it behaves like fetch
+    async fetchStore(url: string): Promise<FetchStoreResult> {
         // TODO - handle queries
         let locations = this.getLocations(url);
         let { path, dataPath, headersPath, extension, nsurl } = locations;
-
-        let makeRequest = true;
-        let returnLater = true;
-
-        let result;
 
         let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
         if (dataExists) {
@@ -181,33 +178,19 @@ class FetchStore {
                 let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
                 if (attrs && error.isNil()) {
                     retrievalDate = attrs.fileModificationDate.js;
-
-                    let now = new Date();
-                    let age = now.valueOf() - retrievalDate.valueOf();
-                    makeRequest = age >= policy.refreshIfOlderThan;
-                    returnLater = age >= policy.returnIfYoungerThan;
                 }
 
-                if (!returnLater) {
-                    let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
-                    result = { path: dataPath, headers, retrievalDate };
-                }
+                let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
+                return { path: dataPath, headers, retrievalDate };
             } catch (e) {
-                makeRequest = true;
-                returnLater = true;
             }
         }
 
-        let fetchPromise: Promise<FetchStoreResult> = Promise.reject(new Error("Unexpected"));
-
-        if (makeRequest) {
-            fetchPromise = this.fetch_(locations);
-        }
-
-        if (!returnLater && result) {
-            return result;
-        }
-
-        return fetchPromise;
+        // If we're here, one of the following is true:
+        //   The document doesn't exist in the store
+        //   The document attributes could not be read
+        //   Some unexpected error
+        // In any case, we'll make a request and create/refresh the document
+        return this.fetch_(locations);;
     }
 }
