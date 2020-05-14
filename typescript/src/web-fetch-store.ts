@@ -62,7 +62,7 @@ class FetchStore {
         let path = this.path + `${group}${item}`;
         createDirectory(path);
 
-        let extension = nsurl.pathExtension.isNil() ? ".data" : `.${nsurl.pathExtension.js}`;
+        let extension = (nsurl.pathExtension.length == 0) ? ".data" : `.${nsurl.pathExtension.js}`;
         let dataPath = path + `data${extension}`;
         let metadataPath = path + `metadata.txt`;
         return { path: dataPath, retrievalDate: new Date() };
