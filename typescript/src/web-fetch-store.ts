@@ -45,7 +45,7 @@ class FetchStore {
     async fetchStore(url: string, policy: FetchStorePolicy = FetchStorePolicy24): Promise<FetchStoreResult> {
         // TODO - handle queries
         let nsurl = $.NSURL.URLWithString(url);
-        let group = `${nsurl.scheme.js}/${nsurl.host.js}`;
+        let group = `${nsurl.host.js}/${nsurl.scheme.js}`;
         let item = `${nsurl.path.js}`;
         if (!item.startsWith("/")) {
             item = "/" + item;
