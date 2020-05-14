@@ -7,8 +7,8 @@
 
 type FetchStoreResult = {
     path: string;
-    headers: any;
-    retrievalDate: Date;
+    headers: { [key: string]: string };
+    retrievalDate: string; // ISO date time
 };
 
 function createDirectory(path: string) {
@@ -98,7 +98,7 @@ class FetchStore {
                     let headers = getHeaders(response);
                     writeJSON(headersPath, headers);
 
-                    let retrievalDate = new Date();
+                    let retrievalDate = new Date().toISOString();
                     let result = { path: dataPath, headers, retrievalDate };
                     resolve(result);
                 }
@@ -152,7 +152,7 @@ class FetchStore {
     // unless the document does not exist or could not be read,
     // in which case it behaves like fetch.
     async fetchStore(url: string): Promise<FetchStoreResult> {
-        
+
         let locations = this.getLocations(url);
         let { nsurl, path, dataPath, headersPath } = locations;
 
@@ -160,10 +160,10 @@ class FetchStore {
         if (dataExists) {
             try {
                 let error = $();
-                let retrievalDate: Date = new Date("2001-01-01");
+                let retrievalDate = new Date("2001-01-01").toISOString();
                 let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
                 if (attrs && error.isNil()) {
-                    retrievalDate = attrs.fileModificationDate.js;
+                    retrievalDate = attrs.fileModificationDate.js.toISOString();
                 }
 
                 let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
