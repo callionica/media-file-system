@@ -38,7 +38,7 @@ class FetchStore {
             path += "/";
         }
         createDirectory(path);
-        
+
         this.path = path;
     }
 
@@ -65,6 +65,6 @@ class FetchStore {
         let extension = nsurl.pathExtension.isNil() ? ".data" : `.${nsurl.pathExtension.js}`;
         let dataPath = path + `data${extension}`;
         let metadataPath = path + `metadata.txt`;
-        return { path: "", retrievalDate: new Date() };
+        return { path: dataPath, retrievalDate: new Date() };
     }
 }
