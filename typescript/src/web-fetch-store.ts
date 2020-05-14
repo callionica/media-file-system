@@ -21,6 +21,7 @@ const FetchStorePolicy24 = {
 
 type FetchStoreResult = {
     path: string;
+    headers: any;
     retrievalDate: Date;
 };
 
@@ -28,6 +29,18 @@ function createDirectory(path: string) {
 	var d = $.NSDictionary.alloc.init;
 	var url = $.NSURL.alloc.initFileURLWithPath(path);
 	$.NSFileManager.defaultManager.createDirectoryAtURLWithIntermediateDirectoriesAttributesError(url, true, d, null);
+}
+
+function readJSON(path: string): any {
+    let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
+    let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
+    if (contents.isNil()) {
+        contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
+    }
+    if (contents.isNil()) {
+        contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
+    }
+    return JSON.parse(contents.js);
 }
 
 class FetchStore {
@@ -64,7 +77,29 @@ class FetchStore {
 
         let extension = (nsurl.pathExtension.length == 0) ? ".data" : `.${nsurl.pathExtension.js}`;
         let dataPath = path + `data${extension}`;
-        let metadataPath = path + `metadata.txt`;
-        return { path: dataPath, retrievalDate: new Date() };
+        let headersPath = path + `headers.txt`;
+        
+        let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
+
+        try {
+            let error = $();
+            let modificationDate;
+            let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
+            if (attrs && error.isNil()) {
+                modificationDate = attrs.fileModificationDate;
+            }
+
+            let headers = { "Content-Type": "text/plain; charset=utf-8" };
+            try {
+                headers = readJSON(headersPath);
+            } catch (e) {
+            }
+
+            return { path: dataPath, headers, retrievalDate: modificationDate.js };
+        } catch (e) {
+        }
+    
+        return { path: dataPath, headers: {}, retrievalDate: new Date() };
+        
     }
 }
