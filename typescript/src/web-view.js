@@ -20,6 +20,14 @@ function quotedString(o) {
     return JSON.stringify(result);
 }
 
+function ensureInteger(value) {
+    if (Number.isInteger(value)) {
+        return value;
+    }
+
+    throw new Error("Not an integer");
+}
+
 function WebView(url, schemes, features = { $log: (...args) => console.log("Host:", ...args) }) {
     let webview;
 
@@ -55,13 +63,14 @@ function WebView(url, schemes, features = { $log: (...args) => console.log("Host
                             }
 
                             // Package up the results and send them back
+                            let responseID = ensureInteger(o.response);
                             promise.then(result => {
                                 let r = result && quotedString(result);
-                                let js = `evalInHostResponse(${o.response}, ${r}, undefined);`; // UNSAFE
+                                let js = `evalInHostResponse(${responseID}, ${r}, undefined);`; // UNSAFE
                                 evalInGuest(js);
                             }).catch(error => {
                                 let e = error && quotedString(error);
-                                let js = `evalInHostResponse(${o.response}, undefined, ${e});`; // UNSAFE
+                                let js = `evalInHostResponse(${responseID}, undefined, ${e});`; // UNSAFE
                                 evalInGuest(js);
                             });
                         }
