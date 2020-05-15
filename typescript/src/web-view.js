@@ -86,7 +86,7 @@ function WebView(url, schemes, features = { $log: (...args) => console.log("Host
 
         let featureProxies = Object.keys(features).map(key => `
 function ${key}(...args) {
-    return evalInHost(${JSON.stringify(key)}, args);
+    return evalInHost(${quotedString(key)}, args);
 }
 `);
 
