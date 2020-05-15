@@ -74,7 +74,8 @@ function WebViewWindow(url) {
     let store = new FetchStore("/Users/user/Desktop/__current/fs");
     
     let features = {
-        fetchStore: (url) => store.fetchStore(url)
+        storeFetch: (url) => store.fetch(url),
+        storeRead: (url) => store.read(url),
     };
 
     let webView = WebView(url, schemes, features);

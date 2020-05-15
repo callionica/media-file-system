@@ -7,7 +7,7 @@
     <script>
         const _fetch_ = window.fetch;
         var localFetch = async function localFetch(url) {
-			let result = await fetchStore(url);
+			let result = await storeRead(url);
 			let localURL = document.origin + result.path;
 			return await _fetch_(localURL);
         };

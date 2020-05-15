@@ -151,10 +151,10 @@ class FetchStore {
         return await this.fetch_(this.getLocations(url));
     }
 
-    // fetchStore will always return the document found in the store
+    // read will always return the document found in the store
     // unless the document does not exist or could not be read,
     // in which case it behaves like fetch.
-    async fetchStore(url: string): Promise<FetchStoreResult> {
+    async read(url: string): Promise<FetchStoreResult> {
 
         let locations = this.getLocations(url);
         let { dataPath, headersPath } = locations;
