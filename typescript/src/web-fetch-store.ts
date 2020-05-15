@@ -4,6 +4,28 @@
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
 // Documents in the FetchStore can be retrieved even if no network connection is available.
 
+type FetchStoreAge = {
+    days?: number;
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+    milliseconds?: number;
+};
+
+function toMilliseconds(age: FetchStoreAge): number {
+    const factors = {
+        milliseconds: 1,
+        seconds: 1000,
+        minutes: 60 * 1000,
+        hours: 60 * 60 * 1000,
+        days: 24 * 60 * 60 * 1000,
+    };
+
+    const get = (k: keyof FetchStoreAge) => (age[k] === undefined) ? 0 : (age[k]! * factors[k]);
+
+    return get("days") + get("hours") + get("minutes") + get("seconds") + get("milliseconds");
+}
+
 // FetchStoreResult is designed to be JSON round-trippable
 // so the date is typed as a string
 type FetchStoreResult = {
@@ -154,7 +176,7 @@ class FetchStore {
     // read will always return the document found in the store
     // unless the document does not exist or could not be read,
     // in which case it behaves like fetch.
-    async read(url: string): Promise<FetchStoreResult> {
+    async read(url: string, maxAge?: FetchStoreAge): Promise<FetchStoreResult> {
 
         let locations = this.getLocations(url);
         let { dataPath, headersPath } = locations;
@@ -170,7 +192,15 @@ class FetchStore {
                 }
 
                 let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
-                return { path: dataPath, headers, retrievalDate };
+
+                let date = new Date(retrievalDate);
+                let age = Date.now().valueOf() - date.valueOf();
+
+                let valid = (maxAge === undefined) || (age <= toMilliseconds(maxAge));
+
+                if (valid) {
+                    return { path: dataPath, headers, retrievalDate };
+                }
             } catch (e) {
             }
         }
