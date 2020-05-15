@@ -50,8 +50,8 @@ function WebView(url, schemes, features = { $log: (...args) => console.log("Host
                             // Parse the request
                             let o = JSON.parse(message.body.js);
 
-                            // Call the feature and convert the result to a promise
-                            // because the feature could return a promise or a non-promise,
+                            // Call the feature and convert the result to a promise.
+                            // The feature could return a promise or a non-promise,
                             // so we need to treat promises and non-promises the same.
                             let promise;
                             try {
