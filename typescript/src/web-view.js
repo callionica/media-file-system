@@ -1,15 +1,26 @@
 // ALL RIGHTS RESERVED
 
 // WATCH OUT!!! DO NOT USE THIS WEB VIEW IF YOU INTEND TO LOAD UNTRUSTED HTML PAGES!
-// THIS CODE ALLOWS AN HTML PAGE TO EXECUTE CODE AS IF IT IS A JXA SCRIPT!
 
-// This WKWebView has a WKScriptMessageHandler that evals the message passed to it.
-// This allows the web pages contained by the WKWebView to execute Javascript in the 
+// This WKWebView has a WKScriptMessageHandler that calls into the feature functions
+// specified by the creator of the web view.
+// This allows the web pages contained by the WKWebView to execute code in the 
 // context of the JXA host app. This is only sensible if you have complete control over
 // the web pages that you load in the web view.
 
-// Web pages hosted by this webview can call evalInHost(js) which returns a Promise
-function WebView(url, schemes) {
+function quotedString(o) {
+    let result = JSON.stringify(o, null, 2);
+
+    // If o was already a string, the JSON version will be a quoted string
+    if (result[0] === '"') {
+        return result;
+    }
+
+    // Otherwise we need to stringify again to get a quoted string
+    return JSON.stringify(result);
+}
+
+function WebView(url, schemes, features = { $log: (...args) => console.log("Host:", ...args) }) {
     let webview;
 
     function evalInGuest(js) {
@@ -31,13 +42,13 @@ function WebView(url, schemes) {
                             // Parse the request
                             let o = JSON.parse(message.body.js);
 
-                            // Eval the code and convert the result to a promise
-                            // (because if the code returns a promise, we'll need it to get the result)
+                            // Call the feature and convert the result to a promise
+                            // because the feature could return a promise or a non-promise,
+                            // so we need to treat promises and non-promises the same.
                             let promise;
                             try {
-                                // eval is UNSAFE
-                                // The code that we are going to execute came from the web page
-                                let result = eval(o.request); // UNSAFE
+                                let feature = features[o.request.name];
+                                let result = feature(...o.request.args);
                                 promise = Promise.resolve(result);
                             } catch (e) {
                                 promise = Promise.reject(e);
@@ -45,11 +56,11 @@ function WebView(url, schemes) {
 
                             // Package up the results and send them back
                             promise.then(result => {
-                                let r = result && ("`" + JSON.stringify(result, null, 2) + "`");
+                                let r = result && quotedString(result);
                                 let js = `evalInHostResponse(${o.response}, ${r}, undefined);`; // UNSAFE
                                 evalInGuest(js);
                             }).catch(error => {
-                                let e = error && ("`" + error + "`");
+                                let e = error && quotedString(error);
                                 let js = `evalInHostResponse(${o.response}, undefined, ${e});`; // UNSAFE
                                 evalInGuest(js);
                             });
@@ -64,11 +75,17 @@ function WebView(url, schemes) {
 
         controller.addScriptMessageHandlerName(handler, handlerName);
 
-        let us =
+        let featureProxies = Object.keys(features).map(key => `
+function ${key}(...args) {
+    return evalInHost(${JSON.stringify(key)}, args);
+}
+`);
+
+        let userScript =
             `
 let evalInHostResponses = [];
 
-function evalInHost(js) {
+function evalInHost(name, args) {
     let promise = new Promise((resolve, reject) => {
         let cb = (result, error) => {
             if (error !== undefined) {
@@ -78,9 +95,9 @@ function evalInHost(js) {
             }
         };
         evalInHostResponses.push(cb);
-        let responseID = (evalInHostResponses.length - 1);
+        let response = (evalInHostResponses.length - 1);
 
-        let json = JSON.stringify({ request: js, response: responseID}, null, 2);
+        let json = JSON.stringify({ request: { name, args }, response }, null, 2);
         window.webkit.messageHandlers.${handlerName}.postMessage(json);
     });
     
@@ -95,10 +112,12 @@ function evalInHostResponse(responseID, jsonResult, error) {
         cb(result, error);
     }
 }
+
+${featureProxies.join("\n")}
 `
             ;
 
-        let script = $.WKUserScript.alloc.initWithSourceInjectionTimeForMainFrameOnly(us, $.WKUserScriptInjectionTimeAtDocumentStart, true);
+        let script = $.WKUserScript.alloc.initWithSourceInjectionTimeForMainFrameOnly(userScript, $.WKUserScriptInjectionTimeAtDocumentStart, true);
         controller.addUserScript(script);
     }
 
