@@ -1,3 +1,18 @@
+cat ../js/media-file-system.js >> _app.js
+cat web-scheme-handler-media-file-system.js >> _app.js
+
+cat ../js/web-fetch-store.js > _app.js
+cat web-scheme-handler-file-system.js >> _app.js
+cat web-scheme-handler-web.js >> _app.js
+cat web-view.js >> _app.js
+cat web-application.js >> _app.js
+
+//main("/Users/user/Documents/github/media-file-system/typescript/src/_scratch.html");
+//main("/Users/user/Desktop/__current/log.html");
+//main("/Users/user/Desktop/__current/In the Dark.jpg");
+main("/Users/user/Documents/github/landmarks/typescript/demo/feed.html");
+//main("/Volumes/A128/index.html");
+
 (function () {
 
     let app = Application.currentApplication();
