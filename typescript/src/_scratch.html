@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+        const _fetch_ = window.fetch;
+        var localFetch = async function localFetch(url) {
+			let result = await fetchStore(url);
+			let localURL = document.origin + result.path;
+			return await _fetch_(localURL);
+        };
+        
+        localFetch("https://callionica.com").then(x => x.text()).then(text => document.body.innerText = text);
+    </script>
+</head>
+<body>
+    
+</body>
+</html>

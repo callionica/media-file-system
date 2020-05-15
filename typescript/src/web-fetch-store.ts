@@ -69,7 +69,7 @@ class FetchStore {
         this.session = createSession(cache);
     }
 
-    async fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
+    fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
 
         function createDataTask(session: any, url: any, handler: any) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
@@ -101,7 +101,9 @@ class FetchStore {
 
                     let retrievalDate = new Date().toISOString();
                     let result = { path: dataPath, headers, retrievalDate };
-                    resolve(result);
+                    $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                        resolve(result);
+                    });
                 }
             }
 
@@ -146,7 +148,7 @@ class FetchStore {
     // in the HTTP cache and still valid.
     // A successful response updates the document in the store.
     async fetch(url: string): Promise<FetchStoreResult> {
-        return this.fetch_(this.getLocations(url));
+        return await this.fetch_(this.getLocations(url));
     }
 
     // fetchStore will always return the document found in the store
@@ -178,6 +180,6 @@ class FetchStore {
         //   The document attributes could not be read
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
-        return this.fetch_(locations);
+        return await this.fetch_(locations);
     }
 }
