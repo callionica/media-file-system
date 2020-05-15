@@ -173,8 +173,9 @@ class FetchStore {
         return await this.fetch_(this.getLocations(url));
     }
 
-    // read will always return the document found in the store
+    // read will return the document found in the store
     // unless the document does not exist or could not be read,
+    // or unless the document is too old,
     // in which case it behaves like fetch.
     async read(url: string, maxAge?: FetchStoreAge): Promise<FetchStoreResult> {
 
@@ -208,6 +209,7 @@ class FetchStore {
         // If we're here, one of the following is true:
         //   The document doesn't exist in the store
         //   The document attributes could not be read
+        //   The document is too old
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
         return await this.fetch_(locations);
