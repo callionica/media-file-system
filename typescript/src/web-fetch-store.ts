@@ -2,9 +2,10 @@
 // Unlike a typical HTTP cache, it doesn't follow the server's instructions about caching.
 // Caching is entirely under the control of the client.
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
-// Documents in the FetchStore can be retrieved even if no network connection is available
-// and even if the connection is available, but the server returns an error.
+// Documents in the FetchStore can be retrieved even if no network connection is available.
 
+// FetchStoreResult is designed to be JSON round-trippable
+// so the date is typed as a string
 type FetchStoreResult = {
     path: string;
     headers: { [key: string]: string };
@@ -154,7 +155,7 @@ class FetchStore {
     async fetchStore(url: string): Promise<FetchStoreResult> {
 
         let locations = this.getLocations(url);
-        let { nsurl, path, dataPath, headersPath } = locations;
+        let { dataPath, headersPath } = locations;
 
         let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
         if (dataExists) {
