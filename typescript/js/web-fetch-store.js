@@ -3,36 +3,7 @@
 // Unlike a typical HTTP cache, it doesn't follow the server's instructions about caching.
 // Caching is entirely under the control of the client.
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
-// Documents in the FetchStore can be retrieved even if no network connection is available
-// and even if the connection is available, but the server returns an error.
-function createDirectory(path) {
-    var d = $.NSDictionary.alloc.init;
-    var url = $.NSURL.alloc.initFileURLWithPath(path);
-    $.NSFileManager.defaultManager.createDirectoryAtURLWithIntermediateDirectoriesAttributesError(url, true, d, null);
-}
-// Read a UTF8 file and parse it as JSON
-// Any failures are ignored and the default value is returned instead
-function readJSON(path, _default = {}) {
-    try {
-        let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
-        let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
-        if (contents.isNil()) {
-            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
-        }
-        if (contents.isNil()) {
-            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
-        }
-        return JSON.parse(contents.js);
-    }
-    catch (e) {
-    }
-    return _default;
-}
-function writeJSON(path, value) {
-    let json = JSON.stringify(value, null, 2);
-    let error = $();
-    $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
-}
+// Documents in the FetchStore can be retrieved even if no network connection is available.
 class FetchStore {
     constructor(path) {
         if (!path.endsWith("/")) {
@@ -49,7 +20,7 @@ class FetchStore {
         }
         this.session = createSession(cache);
     }
-    async fetch_(locations) {
+    fetch_(locations) {
         function createDataTask(session, url, handler) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
             let timeout = 60.0; // seconds
@@ -63,20 +34,33 @@ class FetchStore {
             }
             return headers;
         }
+        let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
-        let promise = new Promise((resolve, reject) => {
+        let promise = createMainQueuePromise((resolve, reject) => {
             function handler(data, response, error) {
                 if (!error.isNil()) {
-                    reject(error);
+                    reject(new Error(error.description));
                 }
                 else {
-                    createDirectory(path);
-                    data.writeToFileAtomically(dataPath, true);
-                    let headers = getHeaders(response);
-                    writeJSON(headersPath, headers);
-                    let retrievalDate = new Date();
-                    let result = { path: dataPath, headers, retrievalDate };
-                    resolve(result);
+                    // TODO - do we get redirect codes here?
+                    if ((200 <= response.statusCode) && (response.statusCode < 300)) {
+                        createDirectory(path);
+                        data.writeToFileAtomically(dataPath, true);
+                        let headers = getHeaders(response);
+                        writeJSON(headersPath, headers);
+                        let retrievalDate = new Date().toISOString();
+                        let result = { path: dataPath, headers, retrievalDate };
+                        resolve(result);
+                    }
+                    else {
+                        try {
+                            let result = store.read_(locations);
+                            resolve(result);
+                        }
+                        catch (e) {
+                            reject(e);
+                        }
+                    }
                 }
             }
             let dataTask = createDataTask(this.session, nsurl, handler);
@@ -110,37 +94,49 @@ class FetchStore {
     // The request may not make it all the way to the server if the document is
     // in the HTTP cache and still valid.
     // A successful response updates the document in the store.
+    // A failure result falls back to returning an already stored document if there is one.
     async fetch(url) {
-        return this.fetch_(this.getLocations(url));
+        return await this.fetch_(this.getLocations(url));
     }
-    // fetchStore will always return the document found in the store
-    // unless the document does not exist or could not be read,
-    // in which case it behaves like fetch.
-    async fetchStore(url) {
-        let locations = this.getLocations(url);
-        let { nsurl, path, dataPath, headersPath } = locations;
+    read_(locations) {
+        let { dataPath, headersPath } = locations;
         let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
-        if (dataExists) {
-            try {
-                let error = $();
-                let retrievalDate = new Date("2001-01-01");
-                let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
-                if (attrs && error.isNil()) {
-                    retrievalDate = attrs.fileModificationDate.js;
-                }
-                let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
-                return { path: dataPath, headers, retrievalDate };
+        if (!dataExists) {
+            throw new Error("Document not in the store.");
+        }
+        let error = $();
+        let retrievalDate = new Date("2001-01-01").toISOString();
+        let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
+        if (attrs && error.isNil()) {
+            retrievalDate = attrs.fileModificationDate.js.toISOString();
+        }
+        let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
+        return { path: dataPath, headers, retrievalDate };
+    }
+    // read will return the document found in the store
+    // unless the document does not exist or could not be read,
+    // or unless the document is too old,
+    // in which case read behaves like fetch.
+    async read(url, maxAge) {
+        let locations = this.getLocations(url);
+        try {
+            let result = this.read_(locations);
+            let date = new Date(result.retrievalDate);
+            let age = Date.now().valueOf() - date.valueOf();
+            let valid = (maxAge === undefined) || (age <= toMilliseconds(maxAge));
+            if (valid) {
+                return result;
             }
-            catch (e) {
-            }
+        }
+        catch (e) {
         }
         // If we're here, one of the following is true:
         //   The document doesn't exist in the store
         //   The document attributes could not be read
+        //   The document is too old
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
-        return this.fetch_(locations);
-        ;
+        return await this.fetch_(locations);
     }
 }
 //# sourceMappingURL=web-fetch-store.js.map
