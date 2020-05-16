@@ -108,24 +108,45 @@ class FetchStore {
             return headers;
         }
 
+        let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
-        let promise = new Promise<FetchStoreResult>((resolve, reject) => {
+        let promise = new Promise<FetchStoreResult>((resolve_, reject_) => {
+            const resolve = (result: any) => {
+                $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                    resolve_(result);
+                });
+            };
+
+            const reject = (error: any) => {
+                $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                    reject_(error);
+                });
+            };
+
             function handler(data: any, response: any, error: any) {
                 if (!error.isNil()) {
-                    reject(error);
+                    reject(new Error(error.description));
                 } else {
-                    createDirectory(path);
+                    // TODO - do we get redirect codes here?
+                    if ((200 <= response.statusCode) && (response.statusCode < 300)) {
+                        createDirectory(path);
 
-                    data.writeToFileAtomically(dataPath, true);
+                        data.writeToFileAtomically(dataPath, true);
 
-                    let headers = getHeaders(response);
-                    writeJSON(headersPath, headers);
+                        let headers = getHeaders(response);
+                        writeJSON(headersPath, headers);
 
-                    let retrievalDate = new Date().toISOString();
-                    let result = { path: dataPath, headers, retrievalDate };
-                    $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                        let retrievalDate = new Date().toISOString();
+                        let result = { path: dataPath, headers, retrievalDate };
                         resolve(result);
-                    });
+                    } else {
+                        try {
+                            let result = store.read_(locations);
+                            resolve(result);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }
                 }
             }
 
@@ -169,8 +190,29 @@ class FetchStore {
     // The request may not make it all the way to the server if the document is
     // in the HTTP cache and still valid.
     // A successful response updates the document in the store.
+    // A failure result falls back to returning an already stored document if there is one.
     async fetch(url: string): Promise<FetchStoreResult> {
         return await this.fetch_(this.getLocations(url));
+    }
+
+    read_(locations: FetchStoreLocations): FetchStoreResult {
+        let { dataPath, headersPath } = locations;
+
+        let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
+        if (!dataExists) {
+            throw new Error("Document not in the store.");
+        }
+
+        let error = $();
+        let retrievalDate = new Date("2001-01-01").toISOString();
+        let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
+        if (attrs && error.isNil()) {
+            retrievalDate = attrs.fileModificationDate.js.toISOString();
+        }
+
+        let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
+
+        return { path: dataPath, headers, retrievalDate };
     }
 
     // read will return the document found in the store
@@ -178,32 +220,18 @@ class FetchStore {
     // or unless the document is too old,
     // in which case read behaves like fetch.
     async read(url: string, maxAge?: FetchStoreAge): Promise<FetchStoreResult> {
-
         let locations = this.getLocations(url);
-        let { dataPath, headersPath } = locations;
+        try {
+            let result = this.read_(locations);
+            let date = new Date(result.retrievalDate);
+            let age = Date.now().valueOf() - date.valueOf();
 
-        let dataExists = $.NSFileManager.defaultManager.fileExistsAtPath(dataPath);
-        if (dataExists) {
-            try {
-                let error = $();
-                let retrievalDate = new Date("2001-01-01").toISOString();
-                let attrs = $.NSFileManager.defaultManager.attributesOfItemAtPathError(dataPath, error);
-                if (attrs && error.isNil()) {
-                    retrievalDate = attrs.fileModificationDate.js.toISOString();
-                }
+            let valid = (maxAge === undefined) || (age <= toMilliseconds(maxAge));
 
-                let headers = readJSON(headersPath, { "Content-Type": "text/plain; charset=utf-8" });
-
-                let date = new Date(retrievalDate);
-                let age = Date.now().valueOf() - date.valueOf();
-
-                let valid = (maxAge === undefined) || (age <= toMilliseconds(maxAge));
-
-                if (valid) {
-                    return { path: dataPath, headers, retrievalDate };
-                }
-            } catch (e) {
+            if (valid) {
+                return result;
             }
+        } catch (e) {
         }
 
         // If we're here, one of the following is true:
