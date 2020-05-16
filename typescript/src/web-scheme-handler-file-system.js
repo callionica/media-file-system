@@ -23,7 +23,7 @@
 
 // Typically this handler will be registered and used as "file-system://"
 function WebSchemeHandlerFileSystem() {
-    let workQ = $.NSOperationQueue.alloc.init;
+    let workQueue = $.NSOperationQueue.alloc.init;
 
     let logCount = 0;
     function log(contents) {
@@ -51,70 +51,6 @@ function WebSchemeHandlerFileSystem() {
         }
 
         return { path, extension };
-    }
-
-    // Standard javascript:
-    function mimeTypeForExtension(extension) {
-        let ext = extension.toLowerCase();
-        let types = {
-            "htm": "text/html",
-            "html": "text/html",
-
-            "css": "text/css",
-
-            "js": "application/javascript",
-
-            "txt": "text/plain",
-
-            "ttml": "application/ttml+xml",
-            "vtt": "text/vtt",
-            "webvtt": "text/vtt",
-            "srt": "text/plain",
-
-            "jpg": "image/jpeg",
-            "jpeg": "image/jpeg",
-            "png": "image/png",
-
-            "ts": "video/mp2t",
-            "mp2": "video/mpeg",
-            "mp2v": "video/mpeg",
-
-            "mp4": "video/mp4",
-            "mp4v": "video/mp4",
-            "m4v": "video/x-m4v",
-
-            "mp3": "audio/mpeg",
-            "m4a": "audio/m4a",
-            "m3u": "audio/x-mpegurl",
-            "m3u8": "audio/x-mpegurl",
-        };
-        return types[ext] || "text/plain";
-    }
-
-    function readData(path, offset, length) {
-        function seek(handle, offset) {
-            if (handle.seekToOffsetError) {
-                let error = $();
-                return handle.seekToOffsetError(offset, error);
-            }
-
-            handle.seekToFileOffset(offset);
-            return (handle.offsetInFile == offset);
-        }
-
-        function read(handle, length) {
-            if (handle.readDataUpToLengthError) {
-                let error = $();
-                return handle.readDataUpToLengthError(length, error);
-            }
-
-            return handle.readDataOfLength(length);
-        }
-
-        let handle = $.NSFileHandle.fileHandleForReadingAtPath($(path));
-        if (seek(handle, offset)) {
-            return read(handle, length);
-        }
     }
 
     function getRange(request, fileSize) {
@@ -209,7 +145,7 @@ function WebSchemeHandlerFileSystem() {
     }
 
     function WKURLSchemeHandler_webViewStartURLSchemeTaskQ(webView, task) {
-        workQ.addOperationWithBlock(function () {
+        workQueue.addOperationWithBlock(function () {
             try {
                 WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task);
             } catch (e) {

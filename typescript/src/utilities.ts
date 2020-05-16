@@ -50,6 +50,35 @@ function writeJSON(path: string, value: any) {
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 
+type NSData = any;
+type NSFileHandle = any;
+
+function readData(path: string, offset: number, length: number): NSData | undefined {
+    function seek(handle: NSFileHandle, offset: number): boolean {
+        if (handle.seekToOffsetError) {
+            let error = $();
+            return handle.seekToOffsetError(offset, error);
+        }
+
+        handle.seekToFileOffset(offset);
+        return (handle.offsetInFile == offset);
+    }
+
+    function read(handle: NSFileHandle, length: number) {
+        if (handle.readDataUpToLengthError) {
+            let error = $();
+            return handle.readDataUpToLengthError(length, error);
+        }
+
+        return handle.readDataOfLength(length);
+    }
+
+    let handle: NSFileHandle = $.NSFileHandle.fileHandleForReadingAtPath($(path));
+    if (seek(handle, offset)) {
+        return read(handle, length);
+    }
+}
+
 type Resolve<T> = (value?: T | PromiseLike<T>) => void;
 type Reject<T> = (reason?: any) => void;
 type PromiseHandler<T> = (resolve: Resolve<T>, reject: Reject<T>) => void;
@@ -78,4 +107,41 @@ function removePrefix(text: string, prefix: string): string {
         return text.substring(prefix.length);
     }
     return text;
+}
+
+function mimeTypeForExtension(extension: string) {
+    let ext = extension.toLowerCase();
+    let types: { [key: string]: string; } = {
+        "htm": "text/html",
+        "html": "text/html",
+
+        "css": "text/css",
+
+        "js": "application/javascript",
+
+        "txt": "text/plain",
+
+        "ttml": "application/ttml+xml",
+        "vtt": "text/vtt",
+        "webvtt": "text/vtt",
+        "srt": "text/plain",
+
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+
+        "ts": "video/mp2t",
+        "mp2": "video/mpeg",
+        "mp2v": "video/mpeg",
+
+        "mp4": "video/mp4",
+        "mp4v": "video/mp4",
+        "m4v": "video/x-m4v",
+
+        "mp3": "audio/mpeg",
+        "m4a": "audio/m4a",
+        "m3u": "audio/x-mpegurl",
+        "m3u8": "audio/x-mpegurl",
+    };
+    return types[ext] || "text/plain";
 }
