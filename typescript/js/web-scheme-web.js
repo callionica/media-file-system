@@ -62,4 +62,4 @@ class WebSchemeWeb {
         });
     }
 }
-//# sourceMappingURL=web-scheme-handler-web.js.map
+//# sourceMappingURL=web-scheme-web.js.map
