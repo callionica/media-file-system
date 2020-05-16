@@ -19,3 +19,33 @@ function toMilliseconds(duration: Duration): number {
 
     return get("days") + get("hours") + get("minutes") + get("seconds") + get("milliseconds");
 }
+
+function createDirectory(path: string) {
+    var d = $.NSDictionary.alloc.init;
+    var url = $.NSURL.alloc.initFileURLWithPath(path);
+    $.NSFileManager.defaultManager.createDirectoryAtURLWithIntermediateDirectoriesAttributesError(url, true, d, null);
+}
+
+// Read a UTF8 file and parse it as JSON
+// Any failures are ignored and the default value is returned instead
+function readJSON(path: string, _default: any = {}): any {
+    try {
+        let data = $.NSFileManager.defaultManager.contentsAtPath(path); // NSData
+        let contents = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSWindowsCP1252StringEncoding);
+        }
+        if (contents.isNil()) {
+            contents = $.NSString.alloc.initWithDataEncoding(data, $.NSMacOSRomanStringEncoding);
+        }
+        return JSON.parse(contents.js);
+    } catch (e) {
+    }
+    return _default;
+}
+
+function writeJSON(path: string, value: any) {
+    let json = JSON.stringify(value, null, 2);
+    let error = $();
+    $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
+}
