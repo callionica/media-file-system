@@ -6,6 +6,11 @@
 // An implementation of WKURLSchemeHandler that makes https requests,
 // but adds CORS headers to the response to allow cross-origin fetch to work
 // Access-Control-Allow-Origin: *
+/*class WSHWeb implements WebScheme {
+
+}*/
+
+
 function WebSchemeHandlerWeb(cache = $.NSURLCache.sharedURLCache) {
     let workQueue = $.NSOperationQueue.alloc.init;
     let session = createSession();
