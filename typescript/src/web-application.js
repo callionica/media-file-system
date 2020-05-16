@@ -112,7 +112,7 @@ function main(mainPage, host) {
 
     let url;
     if (mainPage.startsWith("/")) {
-        url = `file-system://${host}${mainPage}`;
+        url = `app://${host}/file:${mainPage}`;
     } else {
         url = mainPage;
     }
