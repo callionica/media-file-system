@@ -32,9 +32,9 @@ function WebSchemeHandlerWeb(cache = $.NSURLCache.sharedURLCache) {
             return arr.js.map(x => x.js);
         }
 
-        let prefix = "web:";
+        let prefixes = ["web:", "https:"];
         let pathComponents = unwrap(components.path.pathComponents);
-        if (pathComponents[1] === prefix) {
+        if (prefixes.includes(pathComponents[1])) {
             let host = pathComponents[2];
             let path = pathComponents[0] + pathComponents.slice(3).join("/");
             components.host = host;
