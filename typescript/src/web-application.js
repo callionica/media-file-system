@@ -68,7 +68,8 @@ function WebViewWindow(url) {
     
     let schemes = [
         { name: "file-system", handler: WebSchemeHandlerFileSystem() },
-        { name: "web", handler: WebSchemeHandlerWeb() }
+        { name: "web", handler: WebSchemeHandlerWeb() },
+        { name: "app", handler: WebSchemeHandlerApp() },
     ];
 
     let store = new FetchStore("/Users/user/Desktop/__current/fs");
