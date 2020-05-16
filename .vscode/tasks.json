@@ -13,7 +13,7 @@
 		{
 			"type": "shell",
 			"group": "build",
-			"command": "cd '${workspaceFolder}/typescript/src'&&cat ../js/web-fetch-store.js web-scheme-handler-file-system.js web-scheme-handler-web.js web-view.js web-application.js > _app.js",
+			"command": "cd '${workspaceFolder}/typescript/src'&&cat ../js/utilities.js ../js/web-fetch-store.js web-scheme-handler-file-system.js web-scheme-handler-web.js web-view.js web-application.js > _app.js",
 			"label": "Package",
 			"problemMatcher": []
 		},
