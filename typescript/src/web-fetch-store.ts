@@ -4,27 +4,7 @@
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
 // Documents in the FetchStore can be retrieved even if no network connection is available.
 
-type FetchStoreAge = {
-    days?: number;
-    hours?: number;
-    minutes?: number;
-    seconds?: number;
-    milliseconds?: number;
-};
-
-function toMilliseconds(age: FetchStoreAge): number {
-    const factors = {
-        milliseconds: 1,
-        seconds: 1000,
-        minutes: 60 * 1000,
-        hours: 60 * 60 * 1000,
-        days: 24 * 60 * 60 * 1000,
-    };
-
-    const get = (k: keyof FetchStoreAge) => (age[k] === undefined) ? 0 : (age[k]! * factors[k]);
-
-    return get("days") + get("hours") + get("minutes") + get("seconds") + get("milliseconds");
-}
+type FetchStoreAge = Duration;
 
 // FetchStoreResult is designed to be JSON round-trippable
 // so the date is typed as a string
