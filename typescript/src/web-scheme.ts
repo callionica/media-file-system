@@ -6,6 +6,7 @@ type NSString = OC & { js: string };
 type NSDictionary = OC & { js: any };
 type NSArray<T> = OC & { js: T[] };
 type NSURL = OC;
+type NSURLCache = OC;
 type NSURLResponse = OC;
 type NSError = OC & { description: NSString };
 
