@@ -1,3 +1,14 @@
+
+type Entry = [string, any];
+
+function fromEntries(entries: Entry[], transform: (value: any) => any = (x)=>x): { [key: string]: any } {
+    let result: any = {};
+    for (let [key, value] of entries) {
+        result[key] = transform(value);
+    }
+    return result;
+}
+
 type Duration = {
     days?: number;
     hours?: number;

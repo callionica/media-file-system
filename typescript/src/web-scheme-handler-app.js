@@ -4,7 +4,7 @@
 function WebSchemeHandlerApp(cache = $.NSURLCache.sharedURLCache) {
     
     let file = WebSchemeHandlerFileSystem();
-    let web = WebSchemeHandlerWeb(cache);
+    let web = createSchemeHandler(new WSHWeb(cache)); // WebSchemeHandlerWeb(cache);
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let url = task.request.URL;

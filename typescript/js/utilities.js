@@ -1,4 +1,11 @@
 "use strict";
+function fromEntries(entries, transform = (x) => x) {
+    let result = {};
+    for (let [key, value] of entries) {
+        result[key] = transform(value);
+    }
+    return result;
+}
 function toMilliseconds(duration) {
     const factors = {
         milliseconds: 1,

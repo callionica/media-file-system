@@ -1,8 +1,17 @@
 // ALL RIGHTS RESERVED
 // A simplified interface for generating web responses
 
-type WKURLSchemeHandler = any;
-type WKWebView = any;
+type OC = any & { isNil(): boolean };
+type NSString = OC & { js: string };
+type NSDictionary = OC & { js: any };
+type NSArray<T> = OC & { js: T[] };
+type NSURL = OC;
+type NSURLResponse = OC;
+type NSError = OC & { description: NSString };
+
+type WKURLSchemeHandler = OC;
+type WKWebView = OC;
+
 declare const console: any;
 
 type WebSchemeResponse = {
@@ -29,8 +38,8 @@ class WebSchemeRouter implements WebScheme {
 
         if (scheme === undefined) {
 
-            function unwrap(arr: any) {
-                return arr.js.map((x: any) => x.js);
+            function unwrap(arr: NSArray<NSString>): string[] {
+                return arr.js.map((x: NSString) => x.js);
             }
 
             let pathComponents = unwrap(nsurl.path.pathComponents);
@@ -45,7 +54,7 @@ class WebSchemeRouter implements WebScheme {
     }
 }
 
-function createSchemeHandler(scheme: WebScheme) : WKURLSchemeHandler {
+function createSchemeHandler(scheme: WebScheme): WKURLSchemeHandler {
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView: any, task: any) {
         let nsurl = task.request.URL;
