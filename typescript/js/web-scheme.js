@@ -1,5 +1,6 @@
 "use strict";
 // ALL RIGHTS RESERVED
+// A simplified interface for generating web responses
 // Route requests by using the scheme or the first path component
 class WebSchemeRouter {
     constructor(schemes) {

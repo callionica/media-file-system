@@ -2,6 +2,8 @@
 // A simplified interface for generating web responses
 
 type WKURLSchemeHandler = any;
+type WKWebView = any;
+declare const console: any;
 
 type WebSchemeResponse = {
     status: number,
