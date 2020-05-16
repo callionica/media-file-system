@@ -72,3 +72,10 @@ function createMainQueuePromise<T>(handler: PromiseHandler<T>) {
         handler(resolve, reject);
     });
 }
+
+function removePrefix(text: string, prefix: string): string {
+    if (prefix.length && text.startsWith(prefix)) {
+        return text.substring(prefix.length);
+    }
+    return text;
+}

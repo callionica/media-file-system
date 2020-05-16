@@ -34,8 +34,10 @@ function WebSchemeHandlerFileSystem() {
 
     // Get the file path and extension from a URL
     // adding "/index.html" if the URL is a folder
+    // and removing /file: from the path if it's present
+    // (which allows us to combine file-system and web scheme handlers)
     function pathAndExtension(url) {
-        let path = url.path;
+        let path = removePrefix(url.path.js, "/file:");
         let extension = url.pathExtension;
 
         const separator = "/";
@@ -45,7 +47,7 @@ function WebSchemeHandlerFileSystem() {
 
         if (isFolder(url)) {
             extension = $("html");
-            path = $(path.js + separator + "index.html");
+            path = $(path + separator + "index.html");
         }
 
         return { path, extension };

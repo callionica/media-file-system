@@ -27,6 +27,12 @@ function WebSchemeHandlerWeb(cache = $.NSURLCache.sharedURLCache) {
     function changeScheme(url, scheme) {
         let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(url, true);
         components.scheme = scheme;
+
+        let prefix = "/web:";
+        if (components.path.hasPrefix(prefix)) {
+            components.path = components.path.substringFromIndex(prefix.length);
+        }
+
         return components.URL;
     }
 
