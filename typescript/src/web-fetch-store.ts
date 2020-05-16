@@ -176,7 +176,7 @@ class FetchStore {
     // read will return the document found in the store
     // unless the document does not exist or could not be read,
     // or unless the document is too old,
-    // in which case it behaves like fetch.
+    // in which case read behaves like fetch.
     async read(url: string, maxAge?: FetchStoreAge): Promise<FetchStoreResult> {
 
         let locations = this.getLocations(url);
