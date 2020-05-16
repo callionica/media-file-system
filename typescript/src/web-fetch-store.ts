@@ -14,7 +14,6 @@ type FetchStoreResult = {
     retrievalDate: string; // ISO date time
 };
 
-
 type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any };
 
 class FetchStore {
@@ -61,18 +60,7 @@ class FetchStore {
 
         let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
-        let promise = new Promise<FetchStoreResult>((resolve_, reject_) => {
-            const resolve = (result: any) => {
-                $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
-                    resolve_(result);
-                });
-            };
-
-            const reject = (error: any) => {
-                $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
-                    reject_(error);
-                });
-            };
+        let promise = createMainQueuePromise<FetchStoreResult>((resolve, reject) => {
 
             function handler(data: any, response: any, error: any) {
                 if (!error.isNil()) {

@@ -49,3 +49,26 @@ function writeJSON(path: string, value: any) {
     let error = $();
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
+
+type Resolve<T> = (value?: T | PromiseLike<T>) => void;
+type Reject<T> = (reason?: any) => void;
+type PromiseHandler<T> = (resolve: Resolve<T>, reject: Reject<T>) => void;
+
+function createMainQueuePromise<T>(handler: PromiseHandler<T>) {
+    return new Promise<T>((resolve_, reject_) => {
+
+        const resolve: Resolve<T> = (result) => {
+            $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                resolve_(result);
+            });
+        };
+
+        const reject: Reject<T> = (reason: any) => {
+            $.NSOperationQueue.mainQueue.addOperationWithBlock(function () {
+                reject_(reason);
+            });
+        };
+
+        handler(resolve, reject);
+    });
+}
