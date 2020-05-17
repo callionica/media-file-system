@@ -109,7 +109,6 @@ interface FS {
 }
 
 declare let ObjC: any;
-declare let $: any;
 
 let FS: FS = (function () {
     const separator = "/";

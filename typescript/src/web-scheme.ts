@@ -1,28 +1,73 @@
 // ALL RIGHTS RESERVED
-// A simplified interface for generating web responses
+// A simplified interface for generating web responses in a single pass
 
-type OC = any & { isNil(): boolean };
-type NSString = OC & { js: string };
-type NSDictionary = OC & { js: any };
-type NSArray<T> = OC & { js: T[] };
-type NSURL = OC;
+type OC = object & { isNil(): boolean; };
+
+interface NSString {
+    writeToFileAtomicallyEncodingError(path: string | NSString, atomic: boolean, encoding: any, error: NSError): any;
+    pathComponents: NSArray<NSString>;
+    js: string;
+};
+
+type NSDictionary = OC & { js: any; };
+type NSArray<T> = OC & { js: T[]; };
+type NSURL = OC & {
+    scheme: NSString;
+    host: NSString;
+    path: NSString;
+    pathExtension: NSString;
+    absoluteString: NSString;
+};
+interface NSURLComponents {
+    scheme: NSString;
+    host: NSString;
+    path: NSString;
+    URL: NSURL;
+}
 type NSURLCache = OC;
-type NSURLResponse = OC;
-type NSError = OC & { description: NSString };
+type NSURLRequest = OC & { allHTTPHeaderFields: NSDictionary; };
+type NSURLResponse = OC & {
+    statusCode: number;
+    allHeaderFields: NSDictionary;
+};
+type NSError = OC & { description: NSString; };
+
+type NSDollar = {
+    (): NSError;
+    (value: string | NSString): NSString;
+    (value: object | NSDictionary): NSDictionary;
+    [key: string]: any;
+};
+
+declare const $: NSDollar;
 
 type WKURLSchemeHandler = OC;
 type WKWebView = OC;
 
 declare const console: any;
 
+type WebSchemeHeaders = { [key: string]: string };
+
+function allHeaders(reqres: { allHeaderFields?: NSDictionary; allHTTPHeaderFields?: NSDictionary }): WebSchemeHeaders {
+    function unwrap(d: NSDictionary): WebSchemeHeaders {
+        return fromEntries(d.js, v => v.js);
+    }
+    return unwrap(reqres.allHeaderFields || reqres.allHTTPHeaderFields!);
+}
+
+type WebSchemeRequest = {
+    url: string,
+    headers: WebSchemeHeaders,
+};
+
 type WebSchemeResponse = {
     status: number,
-    headers: { [key: string]: string },
+    headers: WebSchemeHeaders,
     data: NSData,
 };
 
 interface WebScheme {
-    getResponse(url: string): Promise<WebSchemeResponse>;
+    getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse>;
 }
 
 // Route requests by using the scheme or the first path component
@@ -33,8 +78,8 @@ class WebSchemeRouter implements WebScheme {
         this.schemes = schemes;
     }
 
-    getResponse(url: string): Promise<WebSchemeResponse> {
-        let nsurl = $.NSURL.URLWithString(url);
+    getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse> {
+        let nsurl = $.NSURL.URLWithString(request.url);
         let scheme = this.schemes[nsurl.scheme.js];
 
         if (scheme === undefined) {
@@ -51,7 +96,7 @@ class WebSchemeRouter implements WebScheme {
             return Promise.reject("No scheme");
         }
 
-        return scheme.getResponse(url);
+        return scheme.getResponse(request);
     }
 }
 
@@ -60,8 +105,9 @@ function createSchemeHandler(scheme: WebScheme): WKURLSchemeHandler {
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView: any, task: any) {
         let nsurl = task.request.URL;
         let url: string = nsurl.absoluteString.js;
+        let headers = allHeaders(task.request);
 
-        scheme.getResponse(url).then(response => {
+        scheme.getResponse({ url, headers }).then(response => {
             let httpHeaders = $(response.headers);
             let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(nsurl, response.status, $(), httpHeaders);
 

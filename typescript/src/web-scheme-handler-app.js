@@ -3,7 +3,7 @@
 // Combines file-system:// and web:// scheme handlers
 function WebSchemeHandlerApp(cache = $.NSURLCache.sharedURLCache) {
     
-    let file = WebSchemeHandlerFileSystem();
+    let file = createSchemeHandler(new WebSchemeFile());
     let web = createSchemeHandler(new WebSchemeWeb(cache));
 
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {

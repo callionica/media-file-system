@@ -20,7 +20,7 @@ class WebSchemeWeb implements WebScheme {
         this.session = createSession(cache);
     }
 
-    getResponse(url: string): Promise<WebSchemeResponse> {
+    getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse> {
         let session = this.session;
 
         function createDataTask(url: NSURL, handler: any) {
@@ -30,12 +30,13 @@ class WebSchemeWeb implements WebScheme {
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
 
-        function changeScheme(url: any, scheme: any) {
-            let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(url, true);
-            components.scheme = scheme;
+        function changeScheme(url: string, scheme: NSString | string) {
+            let nsurl = $.NSURL.URLWithString(url);
+            let components: NSURLComponents = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+            components.scheme = $(scheme);
 
-            function unwrap(arr: any) {
-                return arr.js.map((x: any) => x.js);
+            function unwrap(arr: NSArray<NSString>) {
+                return arr.js.map(x => x.js);
             }
 
             let prefixes = ["web:", "https:"];
@@ -43,8 +44,8 @@ class WebSchemeWeb implements WebScheme {
             if (prefixes.includes(pathComponents[1])) {
                 let host = pathComponents[2];
                 let path = pathComponents[0] + pathComponents.slice(3).join("/");
-                components.host = host;
-                components.path = path;
+                components.host = $(host);
+                components.path = $(path);
             }
 
             return components.URL;
@@ -73,7 +74,7 @@ class WebSchemeWeb implements WebScheme {
                 resolve({ status, headers, data });
             }
 
-            let dataURL = changeScheme(url, "https");
+            let dataURL = changeScheme(request.url, "https");
             let dataTask = createDataTask(dataURL, handler);
             dataTask.resume;
         });

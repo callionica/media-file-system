@@ -1,13 +1,20 @@
 "use strict";
 // ALL RIGHTS RESERVED
-// A simplified interface for generating web responses
+// A simplified interface for generating web responses in a single pass
+;
+function allHeaders(reqres) {
+    function unwrap(d) {
+        return fromEntries(d.js, v => v.js);
+    }
+    return unwrap(reqres.allHeaderFields || reqres.allHTTPHeaderFields);
+}
 // Route requests by using the scheme or the first path component
 class WebSchemeRouter {
     constructor(schemes) {
         this.schemes = schemes;
     }
-    getResponse(url) {
-        let nsurl = $.NSURL.URLWithString(url);
+    getResponse(request) {
+        let nsurl = $.NSURL.URLWithString(request.url);
         let scheme = this.schemes[nsurl.scheme.js];
         if (scheme === undefined) {
             function unwrap(arr) {
@@ -19,14 +26,15 @@ class WebSchemeRouter {
         if (scheme === undefined) {
             return Promise.reject("No scheme");
         }
-        return scheme.getResponse(url);
+        return scheme.getResponse(request);
     }
 }
 function createSchemeHandler(scheme) {
     function WKURLSchemeHandler_webViewStartURLSchemeTask(webView, task) {
         let nsurl = task.request.URL;
         let url = nsurl.absoluteString.js;
-        scheme.getResponse(url).then(response => {
+        let headers = allHeaders(task.request);
+        scheme.getResponse({ url, headers }).then(response => {
             let httpHeaders = $(response.headers);
             let httpResponse = $.NSHTTPURLResponse.alloc.initWithURLStatusCodeHTTPVersionHeaderFields(nsurl, response.status, $(), httpHeaders);
             task.didReceiveResponse(httpResponse);

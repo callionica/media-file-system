@@ -15,7 +15,7 @@ class WebSchemeWeb {
         }
         this.session = createSession(cache);
     }
-    getResponse(url) {
+    getResponse(request) {
         let session = this.session;
         function createDataTask(url, handler) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
@@ -24,18 +24,19 @@ class WebSchemeWeb {
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
         function changeScheme(url, scheme) {
-            let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(url, true);
-            components.scheme = scheme;
+            let nsurl = $.NSURL.URLWithString(url);
+            let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+            components.scheme = $(scheme);
             function unwrap(arr) {
-                return arr.js.map((x) => x.js);
+                return arr.js.map(x => x.js);
             }
             let prefixes = ["web:", "https:"];
             let pathComponents = unwrap(components.path.pathComponents);
             if (prefixes.includes(pathComponents[1])) {
                 let host = pathComponents[2];
                 let path = pathComponents[0] + pathComponents.slice(3).join("/");
-                components.host = host;
-                components.path = path;
+                components.host = $(host);
+                components.path = $(path);
             }
             return components.URL;
         }
@@ -56,7 +57,7 @@ class WebSchemeWeb {
                 delete headers["Strict-Transport-Security"];
                 resolve({ status, headers, data });
             }
-            let dataURL = changeScheme(url, "https");
+            let dataURL = changeScheme(request.url, "https");
             let dataTask = createDataTask(dataURL, handler);
             dataTask.resume;
         });
