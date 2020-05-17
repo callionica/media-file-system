@@ -105,6 +105,8 @@ interface WebScheme {
 
 type WrappedURL = string;
 
+const nohost = "_";
+
 function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
     function unwrap(arr: NSArray<NSString>) {
         return arr.js.map(x => x.js);
@@ -115,6 +117,9 @@ function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
     let pathComponents = unwrap(nsurl.path.pathComponents);
     let scheme = pathComponents[1];
     let host = pathComponents[2];
+    if (host == nohost) {
+        host = "";
+    }
     let path = pathComponents[0] + pathComponents.slice(3).join("/");
     components.scheme = $(scheme);
     components.host = $(host);
@@ -131,7 +136,11 @@ function wrapURL(url: string): WrappedURL {
     let nsurl: NSURL = $.NSURL.URLWithString(url);
     let components: NSURLComponents = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
     let pathComponents = unwrap(nsurl.path.pathComponents);
-    let path = `/${components.scheme.js}/${components.host.js}/` + pathComponents.slice(1).join("/");
+    let host = components.host.js;
+    if (host == "") {
+        host = nohost;
+    }
+    let path = `/${components.scheme.js}/${host}/` + pathComponents.slice(1).join("/");
     components.scheme = $("app");
     components.host = $("callionica.com");
     components.path = $(path);
@@ -159,7 +168,7 @@ class WebSchemeRouter implements WebScheme {
             ...request,
             url: target.url
         };
-        
+
         return scheme.getResponse(request2);
     }
 }
