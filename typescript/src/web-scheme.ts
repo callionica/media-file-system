@@ -6,36 +6,66 @@ interface OC {
 };
 
 type NSStringEncoding = object;
-interface NSString {
+
+interface NSString extends OC {
     writeToFileAtomicallyEncodingError(path: string | NSString, atomic: boolean, encoding: NSStringEncoding, error: NSError): boolean;
     pathComponents: NSArray<NSString>;
     js: string;
 };
 
-type NSDictionary = OC & { js: object; };
-type NSArray<T> = OC & { js: T[]; };
-type NSURL = OC & {
+interface NSDictionary extends OC {
+    js: object;
+};
+
+interface NSArray<T> extends OC {
+    js: T[];
+};
+
+interface NSData extends OC {
+};
+
+interface NSFileHandle extends OC {
+    seekToOffsetError?(offset: number, error: NSError): boolean;
+    readDataUpToLengthError?(length: number, error: NSError): NSData;
+
+    offsetInFile: number;
+    seekToFileOffset(offset: number): void;
+    readDataOfLength(length: number): NSData;
+};
+
+interface NSURL extends OC {
     scheme: NSString;
     host: NSString;
     path: NSString;
     pathExtension: NSString;
     absoluteString: NSString;
 };
+
 interface NSURLComponents {
     scheme: NSString;
     host: NSString;
     path: NSString;
     URL: NSURL;
 }
+
 type NSURLCache = OC;
-type NSURLRequest = OC & { allHTTPHeaderFields: NSDictionary; };
-type NSURLResponse = OC & {
+
+interface NSURLRequest extends OC {
+    allHTTPHeaderFields: NSDictionary;
+};
+
+interface NSURLResponse extends OC {
     statusCode: number;
     allHeaderFields: NSDictionary;
 };
-type NSError = OC & { description: NSString; };
+
+interface NSError extends OC {
+    description: NSString;
+};
+
 type NSURLSession = OC;
-type NSDollar = {
+
+interface NSDollar {
     (): NSError;
     (value: string | NSString): NSString;
     (value: object | NSDictionary): NSDictionary;

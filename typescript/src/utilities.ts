@@ -61,18 +61,6 @@ function writeJSON(path: string, value: any) {
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 
-interface NSData {
-};
-
-interface NSFileHandle {
-    seekToOffsetError?(offset: number, error: NSError): boolean;
-    readDataUpToLengthError?(length: number, error: NSError): NSData;
-
-    offsetInFile: number;
-    seekToFileOffset(offset: number): void;
-    readDataOfLength(length: number): NSData;
-};
-
 function readData(path: string, offset: number, length: number): NSData | undefined {
     function seek(handle: NSFileHandle, offset: number): boolean {
         if (handle.seekToOffsetError) {
