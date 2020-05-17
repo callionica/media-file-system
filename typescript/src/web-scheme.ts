@@ -9,7 +9,7 @@ interface NSString {
     js: string;
 };
 
-type NSDictionary = OC & { js: any; };
+type NSDictionary = OC & { js: object; };
 type NSArray<T> = OC & { js: T[]; };
 type NSURL = OC & {
     scheme: NSString;
@@ -48,11 +48,11 @@ declare const console: any;
 
 type WebSchemeHeaders = { [key: string]: string };
 
-function allHeaders(reqres: { allHeaderFields?: NSDictionary; allHTTPHeaderFields?: NSDictionary }): WebSchemeHeaders {
+function allHeaders(requestOrResponse: { allHeaderFields?: NSDictionary; allHTTPHeaderFields?: NSDictionary }): WebSchemeHeaders {
     function unwrap(d: NSDictionary): WebSchemeHeaders {
-        return fromEntries(d.js, v => v.js);
+        return fromEntries(Object.entries(d.js), v => v.js);
     }
-    return unwrap(reqres.allHeaderFields || reqres.allHTTPHeaderFields!);
+    return unwrap(requestOrResponse.allHeaderFields || requestOrResponse.allHTTPHeaderFields!);
 }
 
 type WebSchemeRequest = {

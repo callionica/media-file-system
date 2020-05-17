@@ -94,6 +94,7 @@ type Resolve<T> = (value?: T | PromiseLike<T>) => void;
 type Reject<T> = (reason?: any) => void;
 type PromiseHandler<T> = (resolve: Resolve<T>, reject: Reject<T>) => void;
 
+// The arguments to your promise handler enqueue resolve/reject on the main queue/thread
 function createMainQueuePromise<T>(handler: PromiseHandler<T>) {
     return new Promise<T>((resolve_, reject_) => {
 

@@ -51,19 +51,15 @@ class WebSchemeWeb implements WebScheme {
             return components.URL;
         }
 
-        return new Promise<WebSchemeResponse>((resolve, reject) => {
+        return createMainQueuePromise<WebSchemeResponse>((resolve, reject) => {
             function handler(data: NSData, response: NSURLResponse, error: NSError) {
                 if (!error.isNil()) {
                     reject(error.description.js);
                     return;
                 }
 
-                function unwrap(d: NSDictionary): { [key: string]: string } {
-                    return fromEntries(d.js, v => v.js);
-                }
-
                 let status = response.statusCode;
-                let headers = unwrap(response.allHeaderFields);
+                let headers = allHeaders(response);
 
                 // Allow any origin
                 headers["Access-Control-Allow-Origin"] = "*";

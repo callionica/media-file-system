@@ -25,7 +25,7 @@
 class WebSchemeFile implements WebScheme {
 
     getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse> {
-        return new Promise<WebSchemeResponse>((resolve, reject) => {
+        return createMainQueuePromise<WebSchemeResponse>((resolve, reject) => {
             // Get the file path and extension from a URL
             // adding "/index.html" if the URL is a folder
             // and removing /file: from the path if it's present
