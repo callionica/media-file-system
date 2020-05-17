@@ -1,7 +1,7 @@
 
 type Entry = [string, any];
 
-function fromEntries(entries: Entry[], transform: (value: any) => any = (x)=>x): { [key: string]: any } {
+function fromEntries<T>(entries: Entry[], transform: (value: any) => T = (x) => x): { [key: string]: T } {
     let result: any = {};
     for (let [key, value] of entries) {
         result[key] = transform(value);
@@ -61,8 +61,17 @@ function writeJSON(path: string, value: any) {
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 
-type NSData = any;
-type NSFileHandle = any;
+interface NSData {
+};
+
+interface NSFileHandle {
+    seekToOffsetError?(offset: number, error: NSError): boolean;
+    readDataUpToLengthError?(length: number, error: NSError): NSData;
+
+    offsetInFile: number;
+    seekToFileOffset(offset: number): void;
+    readDataOfLength(length: number): NSData;
+};
 
 function readData(path: string, offset: number, length: number): NSData | undefined {
     function seek(handle: NSFileHandle, offset: number): boolean {

@@ -14,12 +14,12 @@ type FetchStoreResult = {
     retrievalDate: string; // ISO date time
 };
 
-type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any };
+type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: NSURL };
 
 class FetchStore {
     path: string;
 
-    session: any;
+    session: NSURLSession;
 
     constructor(path: string) {
         if (!path.endsWith("/")) {
@@ -31,7 +31,7 @@ class FetchStore {
 
         let cache = $.NSURLCache.sharedURLCache;
 
-        function createSession(cache: any) {
+        function createSession(cache: NSURLCache): NSURLSession {
             let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
             configuration.waitsForConnectivity = true
             configuration.URLCache = cache;
@@ -43,20 +43,20 @@ class FetchStore {
 
     fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
 
-        function createDataTask(session: any, url: any, handler: any) {
+        function createDataTask(session: any, url: NSURL, handler: any) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
             let timeout = 60.0; // seconds
             let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
 
-        function getHeaders(response: any) {
-            let headers = { ...(response.allHeaderFields.js) };
-            for (let [key, value] of Object.entries(headers)) {
-                headers[key] = ObjC.unwrap(value);
-            }
-            return headers;
-        }
+        // function getHeaders(response: any) {
+        //     let headers = { ...(response.allHeaderFields.js) };
+        //     for (let [key, value] of Object.entries(headers)) {
+        //         headers[key] = ObjC.unwrap(value);
+        //     }
+        //     return headers;
+        // }
 
         let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
@@ -72,7 +72,7 @@ class FetchStore {
 
                         data.writeToFileAtomically(dataPath, true);
 
-                        let headers = getHeaders(response);
+                        let headers = allHeaders(response);
                         writeJSON(headersPath, headers);
 
                         let retrievalDate = new Date().toISOString();

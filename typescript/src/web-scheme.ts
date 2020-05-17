@@ -1,10 +1,13 @@
 // ALL RIGHTS RESERVED
 // A simplified interface for generating web responses in a single pass
 
-type OC = object & { isNil(): boolean; };
+interface OC {
+    isNil(): boolean;
+};
 
+type NSStringEncoding = object;
 interface NSString {
-    writeToFileAtomicallyEncodingError(path: string | NSString, atomic: boolean, encoding: any, error: NSError): any;
+    writeToFileAtomicallyEncodingError(path: string | NSString, atomic: boolean, encoding: NSStringEncoding, error: NSError): boolean;
     pathComponents: NSArray<NSString>;
     js: string;
 };
@@ -31,7 +34,7 @@ type NSURLResponse = OC & {
     allHeaderFields: NSDictionary;
 };
 type NSError = OC & { description: NSString; };
-
+type NSURLSession = OC;
 type NSDollar = {
     (): NSError;
     (value: string | NSString): NSString;
