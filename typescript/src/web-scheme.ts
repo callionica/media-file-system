@@ -103,6 +103,41 @@ interface WebScheme {
     getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse>;
 }
 
+type WrappedURL = string;
+
+function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
+    function unwrap(arr: NSArray<NSString>) {
+        return arr.js.map(x => x.js);
+    }
+
+    let nsurl: NSURL = $.NSURL.URLWithString(url);
+    let components: NSURLComponents = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+    let pathComponents = unwrap(nsurl.path.pathComponents);
+    let scheme = pathComponents[1];
+    let host = pathComponents[2];
+    let path = pathComponents[0] + pathComponents.slice(3).join("/");
+    components.scheme = $(scheme);
+    components.host = $(host);
+    components.path = $(path);
+
+    return { scheme, url: components.URL.absoluteString.js };
+}
+
+function wrapURL(url: string): WrappedURL {
+    function unwrap(arr: NSArray<NSString>) {
+        return arr.js.map(x => x.js);
+    }
+
+    let nsurl: NSURL = $.NSURL.URLWithString(url);
+    let components: NSURLComponents = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+    let pathComponents = unwrap(nsurl.path.pathComponents);
+    let path = `/${components.scheme.js}/${components.host.js}/` + pathComponents.slice(1).join("/");
+    components.scheme = $("app");
+    components.host = $("callionica.com");
+    components.path = $(path);
+    return components.URL.absoluteString.js;
+}
+
 // Route requests by using the scheme or the first path component
 class WebSchemeRouter implements WebScheme {
     schemes: { [key: string]: WebScheme };
@@ -112,24 +147,20 @@ class WebSchemeRouter implements WebScheme {
     }
 
     getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse> {
-        let nsurl = $.NSURL.URLWithString(request.url);
-        let scheme = this.schemes[nsurl.scheme.js];
 
-        if (scheme === undefined) {
-
-            function unwrap(arr: NSArray<NSString>): string[] {
-                return arr.js.map((x: NSString) => x.js);
-            }
-
-            let pathComponents = unwrap(nsurl.path.pathComponents);
-            scheme = this.schemes[pathComponents[1]];
-        }
-
+        let target = unwrapURL(request.url);
+        let scheme = this.schemes[target.scheme];
+        
         if (scheme === undefined) {
             return Promise.reject("No scheme");
         }
 
-        return scheme.getResponse(request);
+        let request2 = {
+            ...request,
+            url: target.url
+        };
+        
+        return scheme.getResponse(request2);
     }
 }
 

@@ -68,10 +68,15 @@ function WebViewWindow(url) {
     
     let store = new FetchStore("/Users/user/Desktop/__current/fs");
 
+    let webSchemes = {
+        file: new WebSchemeFile(),
+        https: new WebSchemeWeb(),
+    };
+
+    let router = new WebSchemeRouter(webSchemes);
+
     let schemes = [
-        { name: "file-system", handler: createSchemeHandler(new WebSchemeFile()) },
-        { name: "web", handler: createSchemeHandler(new WebSchemeWeb()) },
-        { name: "app", handler: WebSchemeHandlerApp() },
+        { name: "app", handler: createSchemeHandler(router) },
     ];
 
     let features = {
@@ -112,7 +117,7 @@ function main(mainPage, host) {
 
     let url;
     if (mainPage.startsWith("/")) {
-        url = `app://${host}/file://${mainPage}`;
+        url = `app://${host}/file${mainPage}`;
     } else {
         url = mainPage;
     }

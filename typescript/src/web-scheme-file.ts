@@ -28,11 +28,9 @@ class WebSchemeFile implements WebScheme {
         return createMainQueuePromise<WebSchemeResponse>((resolve, reject) => {
             // Get the file path and extension from a URL
             // adding "/index.html" if the URL is a folder
-            // and removing /file: from the path if it's present
-            // (which allows us to combine file-system and web scheme handlers)
             function pathAndExtension(url: NSURL) {
-                let path = removePrefix(url.path.js, "/file:");
-                let extension: string = url.pathExtension.js;
+                let path = url.path.js;
+                let extension = url.pathExtension.js;
 
                 const separator = "/";
                 function isFolder(url: NSURL) {
