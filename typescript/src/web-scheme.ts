@@ -41,7 +41,7 @@ interface NSURL extends OC {
     absoluteString: NSString;
 };
 
-interface NSURLComponents {
+interface NSURLComponents extends OC {
     scheme: NSString;
     host: NSString;
     path: NSString;

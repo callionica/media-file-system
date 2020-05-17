@@ -40,17 +40,14 @@ class WebSchemeWeb {
             }
             return components.URL;
         }
-        return new Promise((resolve, reject) => {
+        return createMainQueuePromise((resolve, reject) => {
             function handler(data, response, error) {
                 if (!error.isNil()) {
                     reject(error.description.js);
                     return;
                 }
-                function unwrap(d) {
-                    return fromEntries(d.js, v => v.js);
-                }
                 let status = response.statusCode;
-                let headers = unwrap(response.allHeaderFields);
+                let headers = allHeaders(response);
                 // Allow any origin
                 headers["Access-Control-Allow-Origin"] = "*";
                 // Don't return STS to caller

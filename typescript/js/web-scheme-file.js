@@ -20,7 +20,7 @@
 // Typically this handler will be registered and used as "file-system://"
 class WebSchemeFile {
     getResponse(request) {
-        return new Promise((resolve, reject) => {
+        return createMainQueuePromise((resolve, reject) => {
             // Get the file path and extension from a URL
             // adding "/index.html" if the URL is a folder
             // and removing /file: from the path if it's present

@@ -2,11 +2,21 @@
 // ALL RIGHTS RESERVED
 // A simplified interface for generating web responses in a single pass
 ;
-function allHeaders(reqres) {
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+function allHeaders(requestOrResponse) {
     function unwrap(d) {
-        return fromEntries(d.js, v => v.js);
+        return fromEntries(Object.entries(d.js), v => v.js);
     }
-    return unwrap(reqres.allHeaderFields || reqres.allHTTPHeaderFields);
+    return unwrap(requestOrResponse.allHeaderFields || requestOrResponse.allHTTPHeaderFields);
 }
 // Route requests by using the scheme or the first path component
 class WebSchemeRouter {

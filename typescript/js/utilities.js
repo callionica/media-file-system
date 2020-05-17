@@ -66,6 +66,7 @@ function readData(path, offset, length) {
         return read(handle, length);
     }
 }
+// The arguments to your promise handler enqueue resolve/reject on the main queue/thread
 function createMainQueuePromise(handler) {
     return new Promise((resolve_, reject_) => {
         const resolve = (result) => {

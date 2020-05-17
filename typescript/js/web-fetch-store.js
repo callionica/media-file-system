@@ -27,13 +27,13 @@ class FetchStore {
             let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
-        function getHeaders(response) {
-            let headers = Object.assign({}, (response.allHeaderFields.js));
-            for (let [key, value] of Object.entries(headers)) {
-                headers[key] = ObjC.unwrap(value);
-            }
-            return headers;
-        }
+        // function getHeaders(response: any) {
+        //     let headers = { ...(response.allHeaderFields.js) };
+        //     for (let [key, value] of Object.entries(headers)) {
+        //         headers[key] = ObjC.unwrap(value);
+        //     }
+        //     return headers;
+        // }
         let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
         let promise = createMainQueuePromise((resolve, reject) => {
@@ -46,7 +46,7 @@ class FetchStore {
                     if ((200 <= response.statusCode) && (response.statusCode < 300)) {
                         createDirectory(path);
                         data.writeToFileAtomically(dataPath, true);
-                        let headers = getHeaders(response);
+                        let headers = allHeaders(response);
                         writeJSON(headersPath, headers);
                         let retrievalDate = new Date().toISOString();
                         let result = { path: dataPath, headers, retrievalDate };
