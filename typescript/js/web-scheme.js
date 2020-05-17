@@ -18,25 +18,55 @@ function allHeaders(requestOrResponse) {
     }
     return unwrap(requestOrResponse.allHeaderFields || requestOrResponse.allHTTPHeaderFields);
 }
+const nohost = "_";
+function unwrapURL(url) {
+    function unwrap(arr) {
+        return arr.js.map(x => x.js);
+    }
+    let nsurl = $.NSURL.URLWithString(url);
+    let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+    let pathComponents = unwrap(nsurl.path.pathComponents);
+    let scheme = pathComponents[1];
+    let host = pathComponents[2];
+    if (host == nohost) {
+        host = "";
+    }
+    let path = pathComponents[0] + pathComponents.slice(3).join("/");
+    components.scheme = $(scheme);
+    components.host = $(host);
+    components.path = $(path);
+    return { scheme, url: components.URL.absoluteString.js };
+}
+function wrapURL(url) {
+    function unwrap(arr) {
+        return arr.js.map(x => x.js);
+    }
+    let nsurl = $.NSURL.URLWithString(url);
+    let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+    let pathComponents = unwrap(nsurl.path.pathComponents);
+    let host = components.host.js;
+    if (host == "") {
+        host = nohost;
+    }
+    let path = `/${components.scheme.js}/${host}/` + pathComponents.slice(1).join("/");
+    components.scheme = $("app");
+    components.host = $("callionica.com");
+    components.path = $(path);
+    return components.URL.absoluteString.js;
+}
 // Route requests by using the scheme or the first path component
 class WebSchemeRouter {
     constructor(schemes) {
         this.schemes = schemes;
     }
     getResponse(request) {
-        let nsurl = $.NSURL.URLWithString(request.url);
-        let scheme = this.schemes[nsurl.scheme.js];
-        if (scheme === undefined) {
-            function unwrap(arr) {
-                return arr.js.map((x) => x.js);
-            }
-            let pathComponents = unwrap(nsurl.path.pathComponents);
-            scheme = this.schemes[pathComponents[1]];
-        }
+        let target = unwrapURL(request.url);
+        let scheme = this.schemes[target.scheme];
         if (scheme === undefined) {
             return Promise.reject("No scheme");
         }
-        return scheme.getResponse(request);
+        let request2 = Object.assign(Object.assign({}, request), { url: target.url });
+        return scheme.getResponse(request2);
     }
 }
 function createSchemeHandler(scheme) {

@@ -23,23 +23,6 @@ class WebSchemeWeb {
             let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
-        function changeScheme(url, scheme) {
-            let nsurl = $.NSURL.URLWithString(url);
-            let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
-            components.scheme = $(scheme);
-            function unwrap(arr) {
-                return arr.js.map(x => x.js);
-            }
-            let prefixes = ["web:", "https:"];
-            let pathComponents = unwrap(components.path.pathComponents);
-            if (prefixes.includes(pathComponents[1])) {
-                let host = pathComponents[2];
-                let path = pathComponents[0] + pathComponents.slice(3).join("/");
-                components.host = $(host);
-                components.path = $(path);
-            }
-            return components.URL;
-        }
         return createMainQueuePromise((resolve, reject) => {
             function handler(data, response, error) {
                 if (!error.isNil()) {
@@ -54,7 +37,7 @@ class WebSchemeWeb {
                 delete headers["Strict-Transport-Security"];
                 resolve({ status, headers, data });
             }
-            let dataURL = changeScheme(request.url, "https");
+            let dataURL = $.NSURL.URLWithString(request.url);
             let dataTask = createDataTask(dataURL, handler);
             dataTask.resume;
         });
