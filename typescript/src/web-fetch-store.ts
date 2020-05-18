@@ -16,18 +16,27 @@ type FetchStoreResult = {
 
 type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: NSURL };
 
-class FetchStore {
+class FetchStore implements WebScheme {
+    // The folder containing the stored data
     path: string;
+
+    // The object that returns file data from the store
+    localScheme: WebScheme;
+
+    // The maxAge used by getResponse
+    maxAge?: FetchStoreAge;
 
     session: NSURLSession;
 
-    constructor(path: string) {
+    constructor(path: string, localScheme: WebScheme) {
         if (!path.endsWith("/")) {
             path += "/";
         }
         createDirectory(path);
 
         this.path = path;
+
+        this.localScheme = localScheme;
 
         let cache = $.NSURLCache.sharedURLCache;
 
@@ -40,6 +49,7 @@ class FetchStore {
 
         this.session = createSession(cache);
     }
+    
 
     fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
 
@@ -50,14 +60,6 @@ class FetchStore {
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
 
-        // function getHeaders(response: any) {
-        //     let headers = { ...(response.allHeaderFields.js) };
-        //     for (let [key, value] of Object.entries(headers)) {
-        //         headers[key] = ObjC.unwrap(value);
-        //     }
-        //     return headers;
-        // }
-
         let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
         let promise = createMainQueuePromise<FetchStoreResult>((resolve, reject) => {
@@ -67,6 +69,7 @@ class FetchStore {
                     reject(new Error(error.description));
                 } else {
                     // TODO - do we get redirect codes here?
+                    // TODO - partial results
                     if ((200 <= response.statusCode) && (response.statusCode < 300)) {
                         createDirectory(path);
 
@@ -180,5 +183,12 @@ class FetchStore {
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
         return await this.fetch_(locations);
+    }
+
+    async getResponse(request: WebSchemeRequest): Promise<WebSchemeResponse> {
+        let result = await this.read(request.url, this.maxAge);
+        let url = "file://" + result.path;
+        let fileRequest = {...request, url };
+        return await this.localScheme.getResponse(fileRequest);
     }
 }

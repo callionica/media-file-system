@@ -114,6 +114,13 @@ function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
         return arr.js.map(x => x.js);
     }
 
+    function schemeToProtocol(scheme: string): string {
+        if (scheme === "store") {
+            return "https";
+        }
+        return scheme;
+    }
+
     let nsurl: NSURL = $.NSURL.URLWithString(url);
 
     let scheme = nsurl.scheme.js;
@@ -127,7 +134,7 @@ function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
             host = "";
         }
         let path = pathComponents[0] + pathComponents.slice(3).join("/");
-        components.scheme = $(scheme);
+        components.scheme = $(schemeToProtocol(scheme));
         components.host = $(host);
         components.path = $(path);
 

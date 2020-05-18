@@ -25,19 +25,31 @@ function unwrapURL(url) {
     function unwrap(arr) {
         return arr.js.map(x => x.js);
     }
-    let nsurl = $.NSURL.URLWithString(url);
-    let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
-    let pathComponents = unwrap(nsurl.path.pathComponents);
-    let scheme = pathComponents[1];
-    let host = pathComponents[2];
-    if (host == nohost) {
-        host = "";
+    function schemeToProtocol(scheme) {
+        if (scheme === "store") {
+            return "https";
+        }
+        return scheme;
     }
-    let path = pathComponents[0] + pathComponents.slice(3).join("/");
-    components.scheme = $(scheme);
-    components.host = $(host);
-    components.path = $(path);
-    return { scheme, url: components.URL.absoluteString.js };
+    let nsurl = $.NSURL.URLWithString(url);
+    let scheme = nsurl.scheme.js;
+    if (scheme == appscheme) {
+        // If it's an appscheme URL, we get the true URL from the path components
+        let components = $.NSURLComponents.componentsWithURLResolvingAgainstBaseURL(nsurl, true);
+        let pathComponents = unwrap(nsurl.path.pathComponents);
+        scheme = pathComponents[1];
+        let host = pathComponents[2];
+        if (host == nohost) {
+            host = "";
+        }
+        let path = pathComponents[0] + pathComponents.slice(3).join("/");
+        components.scheme = $(schemeToProtocol(scheme));
+        components.host = $(host);
+        components.path = $(path);
+        return { scheme, url: components.URL.absoluteString.js };
+    }
+    // If it's not an appscheme URL, we return the URL unchanged
+    return { scheme, url };
 }
 function wrapURL(url) {
     function unwrap(arr) {

@@ -66,11 +66,14 @@ function WindowDelegate() {
 function WebViewWindow(url) {
     let [width, height] = [1024, 768];
     
-    let store = new FetchStore("/Users/user/Desktop/__current/fs");
+    let file = new WebSchemeFile();
+    let https = new WebSchemeWeb();
+    let store = new FetchStore("/Users/user/Desktop/__current/fs", file);
 
     let webSchemes = {
-        file: new WebSchemeFile(),
-        https: new WebSchemeWeb(),
+        file,
+        https,
+        store,
     };
 
     let router = new WebSchemeRouter(webSchemes);
@@ -82,6 +85,7 @@ function WebViewWindow(url) {
     let features = {
         storeFetch: (...args) => store.fetch(...args),
         storeRead: (...args) => store.read(...args),
+        wrapURL,
     };
 
     let webView = WebView(url, schemes, features);

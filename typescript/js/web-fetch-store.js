@@ -5,12 +5,13 @@
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
 // Documents in the FetchStore can be retrieved even if no network connection is available.
 class FetchStore {
-    constructor(path) {
+    constructor(path, localScheme) {
         if (!path.endsWith("/")) {
             path += "/";
         }
         createDirectory(path);
         this.path = path;
+        this.localScheme = localScheme;
         let cache = $.NSURLCache.sharedURLCache;
         function createSession(cache) {
             let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
@@ -27,13 +28,6 @@ class FetchStore {
             let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
-        // function getHeaders(response: any) {
-        //     let headers = { ...(response.allHeaderFields.js) };
-        //     for (let [key, value] of Object.entries(headers)) {
-        //         headers[key] = ObjC.unwrap(value);
-        //     }
-        //     return headers;
-        // }
         let store = this;
         let { nsurl, path, dataPath, headersPath } = locations;
         let promise = createMainQueuePromise((resolve, reject) => {
@@ -43,6 +37,7 @@ class FetchStore {
                 }
                 else {
                     // TODO - do we get redirect codes here?
+                    // TODO - partial results
                     if ((200 <= response.statusCode) && (response.statusCode < 300)) {
                         createDirectory(path);
                         data.writeToFileAtomically(dataPath, true);
@@ -137,6 +132,12 @@ class FetchStore {
         //   Some unexpected error
         // In any case, we'll make a request and create/refresh the document
         return await this.fetch_(locations);
+    }
+    async getResponse(request) {
+        let result = await this.read(request.url, this.maxAge);
+        let url = "file://" + result.path;
+        let fileRequest = Object.assign(Object.assign({}, request), { url });
+        return await this.localScheme.getResponse(fileRequest);
     }
 }
 //# sourceMappingURL=web-fetch-store.js.map
