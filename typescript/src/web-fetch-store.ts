@@ -10,7 +10,7 @@ type FetchStoreAge = Duration;
 // so the date is typed as a string
 type FetchStoreResult = {
     path: string;
-    headers: { [key: string]: string };
+    headers: WebSchemeHeaders;
     retrievalDate: string; // ISO date time
 };
 
