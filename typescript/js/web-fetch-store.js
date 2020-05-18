@@ -15,12 +15,16 @@ class FetchStore {
         this.remoteScheme = remoteScheme;
     }
     async fetch_(locations) {
-        let { url, path, dataPath, headersPath } = locations;
-        let { status, headers, data } = await this.remoteScheme.getResponse({ url, headers: {} });
-        if ((200 <= status) && (status < 300)) {
+        let response = await this.remoteScheme.getResponse({ url: locations.url, headers: {} });
+        log("fetch_", { response, locations }, typeof response.status);
+        let { status, headers, data } = response;
+        // TODO - 206
+        const cacheableCodes = [200, 301, 302, 307, 308];
+        if (cacheableCodes.includes(status)) {
+            let { url, path, dataPath, headersPath } = locations;
             createDirectory(path);
-            data.writeToFileAtomically(dataPath, true);
             writeJSON(headersPath, headers);
+            data.writeToFileAtomically(dataPath, true);
             let retrievalDate = new Date().toISOString();
             return { path: dataPath, headers, retrievalDate };
         }

@@ -101,7 +101,7 @@ class WebSchemeFile {
                 headers["Content-Range"] = `bytes */${fileSize}`;
                 data = $.NSData.data;
             }
-            resolve({ status, headers, data });
+            resolve({ url: request.url, status, headers, data });
         });
     }
 }

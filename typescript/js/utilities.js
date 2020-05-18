@@ -45,6 +45,11 @@ function writeJSON(path, value) {
     let error = $();
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
+function log(...args) {
+    log.count++;
+    writeJSON(`/Users/user/Desktop/__current/LOG${log.count}.txt`, args);
+}
+log.count = 0;
 function readData(path, offset, length) {
     function seek(handle, offset) {
         if (handle.seekToOffsetError) {

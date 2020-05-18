@@ -26,7 +26,8 @@ class WebSchemeWeb implements WebScheme {
         function createDataTask(url: NSURL, handler: any) {
             let policy = $.NSURLRequestUseProtocolCachePolicy;
             let timeout = 60.0; // seconds
-            let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
+            let request = $.NSMutableURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
+            request.setValueForHTTPHeaderField(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15`, "User-Agent");
             return session.dataTaskWithRequestCompletionHandler(request, handler);
         }
 
