@@ -61,6 +61,12 @@ function writeJSON(path: string, value: any) {
     $(json).writeToFileAtomicallyEncodingError(path, true, $.NSUTF8StringEncoding, error);
 }
 
+function log(...args: any[]) {
+    (log as any).count++;
+    writeJSON(`/Users/user/Desktop/__current/LOG${(log as any).count}.txt`, args);
+}
+(log as any).count = 0;
+
 function readData(path: string, offset: number, length: number): NSData | undefined {
     function seek(handle: NSFileHandle, offset: number): boolean {
         if (handle.seekToOffsetError) {
