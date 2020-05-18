@@ -105,6 +105,8 @@ interface WebScheme {
 
 type WrappedURL = string;
 
+const appscheme = "app";
+const apphost = "callionica.com";
 const nohost = "_";
 
 function unwrapURL(url: WrappedURL): { scheme: string, url: string } {
@@ -141,8 +143,8 @@ function wrapURL(url: string): WrappedURL {
         host = nohost;
     }
     let path = `/${components.scheme.js}/${host}/` + pathComponents.slice(1).join("/");
-    components.scheme = $("app");
-    components.host = $("callionica.com");
+    components.scheme = $(appscheme);
+    components.host = $(apphost);
     components.path = $(path);
     return components.URL.absoluteString.js;
 }

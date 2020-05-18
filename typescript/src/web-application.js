@@ -76,7 +76,7 @@ function WebViewWindow(url) {
     let router = new WebSchemeRouter(webSchemes);
 
     let schemes = [
-        { name: "app", handler: createSchemeHandler(router) },
+        { name: appscheme, handler: createSchemeHandler(router) },
     ];
 
     let features = {
@@ -108,7 +108,7 @@ function main(mainPage, host) {
     let path = $.NSString.alloc.initWithUTF8String(app.pathTo(this)).stringByDeletingLastPathComponent.js + "/";
 
     if (host === undefined) {
-        host = "callionica.com";
+        host = apphost;
     }
 
     if (mainPage === undefined) {

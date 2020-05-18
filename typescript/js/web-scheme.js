@@ -18,6 +18,8 @@ function allHeaders(requestOrResponse) {
     }
     return unwrap(requestOrResponse.allHeaderFields || requestOrResponse.allHTTPHeaderFields);
 }
+const appscheme = "app";
+const apphost = "callionica.com";
 const nohost = "_";
 function unwrapURL(url) {
     function unwrap(arr) {
@@ -49,8 +51,8 @@ function wrapURL(url) {
         host = nohost;
     }
     let path = `/${components.scheme.js}/${host}/` + pathComponents.slice(1).join("/");
-    components.scheme = $("app");
-    components.host = $("callionica.com");
+    components.scheme = $(appscheme);
+    components.host = $(apphost);
     components.path = $(path);
     return components.URL.absoluteString.js;
 }

@@ -28,8 +28,8 @@ function WebSchemeHandlerStore(store, fileHandler) {
         let dataURL = changeScheme(requestURL, "https");
         let url = dataURL.absoluteString.js;
         store.read(url, { hours: 24 }).then(result => {
-            let origin = "app://callionica.com";
-            let fileURL = origin + "/file:" + result.path;
+            let origin = `${appscheme}://${apphost}`;
+            let fileURL = origin + "/file/" + result.path;
             file.webViewStartURLSchemeTask(webView, task);
         });
     }
