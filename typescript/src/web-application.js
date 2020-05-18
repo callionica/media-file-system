@@ -85,7 +85,6 @@ function WebViewWindow(url) {
     let features = {
         storeFetch: (...args) => store.fetch(...args),
         storeRead: (...args) => store.read(...args),
-        wrapURL,
     };
 
     let webView = WebView(url, schemes, features);

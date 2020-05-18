@@ -90,6 +90,24 @@ function ${key}(...args) {
 }
 `);
 
+    let wrap = `
+function wrapURL(url) {
+    let u = new URL(url);
+    let scheme = u.protocol.substring(0, u.protocol.length - 1);
+    let host = u.host;
+    if (host === "") {
+        host = "_";
+    }
+    let path = u.pathname;
+
+    u.pathname = \`$\{scheme}/$\{host}$\{path}\`;
+    u.host = "callionica.com";
+    u.protocol = "app:";
+
+    return u;
+}
+`;
+
         let userScript =
             `
 let evalInHostResponses = [];
@@ -123,6 +141,8 @@ function evalInHostResponse(responseID, jsonResult, error) {
 }
 
 ${featureProxies.join("\n")}
+
+${wrap}
 `
             ;
 
