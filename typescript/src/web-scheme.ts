@@ -56,7 +56,7 @@ interface NSURLRequest extends OC {
 };
 
 interface NSURLResponse extends OC {
-    statusCode: number;
+    statusCode: string; // TODO - doc'd as number, but it's a string
     URL: NSURL;
     allHeaderFields: NSDictionary;
 };

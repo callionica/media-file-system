@@ -37,7 +37,8 @@ class WebSchemeWeb implements WebScheme {
                     return;
                 }
 
-                let status = response.statusCode;
+                let status = parseInt(response.statusCode, 10);
+
                 let headers = allHeaders(response);
 
                 // Allow any origin
