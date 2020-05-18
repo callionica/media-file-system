@@ -22,6 +22,7 @@ interface NSArray<T> extends OC {
 };
 
 interface NSData extends OC {
+    writeToFileAtomically(path: string | NSString, atomic: boolean): boolean;
 };
 
 interface NSFileHandle extends OC {

@@ -68,7 +68,7 @@ function WebViewWindow(url) {
     
     let file = new WebSchemeFile();
     let https = new WebSchemeWeb();
-    let store = new FetchStore("/Users/user/Desktop/__current/fs", file);
+    let store = new FetchStore("/Users/user/Desktop/__current/fs", file, https);
 
     let webSchemes = {
         file,

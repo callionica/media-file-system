@@ -5,63 +5,28 @@
 // Documents that are retrieved from a web server through the FetchStore will be saved permanently.
 // Documents in the FetchStore can be retrieved even if no network connection is available.
 class FetchStore {
-    constructor(path, localScheme) {
+    constructor(path, localScheme, remoteScheme) {
         if (!path.endsWith("/")) {
             path += "/";
         }
         createDirectory(path);
         this.path = path;
         this.localScheme = localScheme;
-        let cache = $.NSURLCache.sharedURLCache;
-        function createSession(cache) {
-            let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
-            configuration.waitsForConnectivity = true;
-            configuration.URLCache = cache;
-            return $.NSURLSession.sessionWithConfiguration(configuration);
-        }
-        this.session = createSession(cache);
+        this.remoteScheme = remoteScheme;
     }
-    fetch_(locations) {
-        function createDataTask(session, url, handler) {
-            let policy = $.NSURLRequestUseProtocolCachePolicy;
-            let timeout = 60.0; // seconds
-            let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
-            return session.dataTaskWithRequestCompletionHandler(request, handler);
+    async fetch_(locations) {
+        let { url, path, dataPath, headersPath } = locations;
+        let { status, headers, data } = await this.remoteScheme.getResponse({ url, headers: {} });
+        if ((200 <= status) && (status < 300)) {
+            createDirectory(path);
+            data.writeToFileAtomically(dataPath, true);
+            writeJSON(headersPath, headers);
+            let retrievalDate = new Date().toISOString();
+            return { path: dataPath, headers, retrievalDate };
         }
-        let store = this;
-        let { nsurl, path, dataPath, headersPath } = locations;
-        let promise = createMainQueuePromise((resolve, reject) => {
-            function handler(data, response, error) {
-                if (!error.isNil()) {
-                    reject(new Error(error.description));
-                }
-                else {
-                    // TODO - do we get redirect codes here?
-                    // TODO - partial results
-                    if ((200 <= response.statusCode) && (response.statusCode < 300)) {
-                        createDirectory(path);
-                        data.writeToFileAtomically(dataPath, true);
-                        let headers = allHeaders(response);
-                        writeJSON(headersPath, headers);
-                        let retrievalDate = new Date().toISOString();
-                        let result = { path: dataPath, headers, retrievalDate };
-                        resolve(result);
-                    }
-                    else {
-                        try {
-                            let result = store.read_(locations);
-                            resolve(result);
-                        }
-                        catch (e) {
-                            reject(e);
-                        }
-                    }
-                }
-            }
-            let dataTask = createDataTask(this.session, nsurl, handler);
-            dataTask.resume;
-        });
-        return promise;
+        else {
+            return await this.read_(locations);
+        }
     }
     getLocations(url) {
         // TODO - handle queries
@@ -82,7 +47,7 @@ class FetchStore {
         let extension = (nsurl.pathExtension.length == 0) ? "data" : `${nsurl.pathExtension.js}`;
         let dataPath = path + `data.${extension}`;
         let headersPath = dataPath + ".headers";
-        return { path, dataPath, headersPath, extension, nsurl };
+        return { path, dataPath, headersPath, extension, url };
     }
     // fetch will always make a request through the HTTP system
     // even if the document already exists in the store.

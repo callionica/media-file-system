@@ -14,7 +14,7 @@ type FetchStoreResult = {
     retrievalDate: string; // ISO date time
 };
 
-type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, nsurl: NSURL };
+type FetchStoreLocations = { path: string, dataPath: string, headersPath: string, extension: string, url: string };
 
 class FetchStore implements WebScheme {
     // The folder containing the stored data
@@ -23,12 +23,13 @@ class FetchStore implements WebScheme {
     // The object that returns file data from the store
     localScheme: WebScheme;
 
+    // The object that returns data from the server or remote location
+    remoteScheme: WebScheme;
+
     // The maxAge used by getResponse
     maxAge?: FetchStoreAge;
 
-    session: NSURLSession;
-
-    constructor(path: string, localScheme: WebScheme) {
+    constructor(path: string, localScheme: WebScheme, remoteScheme: WebScheme) {
         if (!path.endsWith("/")) {
             path += "/";
         }
@@ -37,69 +38,27 @@ class FetchStore implements WebScheme {
         this.path = path;
 
         this.localScheme = localScheme;
-
-        let cache = $.NSURLCache.sharedURLCache;
-
-        function createSession(cache: NSURLCache): NSURLSession {
-            let configuration = $.NSURLSessionConfiguration.defaultSessionConfiguration;
-            configuration.waitsForConnectivity = true
-            configuration.URLCache = cache;
-            return $.NSURLSession.sessionWithConfiguration(configuration);
-        }
-
-        this.session = createSession(cache);
-    }
-    
-
-    fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
-
-        function createDataTask(session: any, url: NSURL, handler: any) {
-            let policy = $.NSURLRequestUseProtocolCachePolicy;
-            let timeout = 60.0; // seconds
-            let request = $.NSURLRequest.requestWithURLCachePolicyTimeoutInterval(url, policy, timeout);
-            return session.dataTaskWithRequestCompletionHandler(request, handler);
-        }
-
-        let store = this;
-        let { nsurl, path, dataPath, headersPath } = locations;
-        let promise = createMainQueuePromise<FetchStoreResult>((resolve, reject) => {
-
-            function handler(data: any, response: any, error: any) {
-                if (!error.isNil()) {
-                    reject(new Error(error.description));
-                } else {
-                    // TODO - do we get redirect codes here?
-                    // TODO - partial results
-                    if ((200 <= response.statusCode) && (response.statusCode < 300)) {
-                        createDirectory(path);
-
-                        data.writeToFileAtomically(dataPath, true);
-
-                        let headers = allHeaders(response);
-                        writeJSON(headersPath, headers);
-
-                        let retrievalDate = new Date().toISOString();
-                        let result = { path: dataPath, headers, retrievalDate };
-                        resolve(result);
-                    } else {
-                        try {
-                            let result = store.read_(locations);
-                            resolve(result);
-                        } catch (e) {
-                            reject(e);
-                        }
-                    }
-                }
-            }
-
-            let dataTask = createDataTask(this.session, nsurl, handler);
-            dataTask.resume;
-        });
-
-        return promise;
+        this.remoteScheme = remoteScheme;
     }
 
-    getLocations(url: string): { path: string, dataPath: string, headersPath: string, extension: string, nsurl: any } {
+    async fetch_(locations: FetchStoreLocations): Promise<FetchStoreResult> {
+        let { url, path, dataPath, headersPath } = locations;
+        let { status, headers, data } = await this.remoteScheme.getResponse({ url, headers: {} });
+        if ((200 <= status) && (status < 300)) {
+            createDirectory(path);
+
+            data.writeToFileAtomically(dataPath, true);
+
+            writeJSON(headersPath, headers);
+
+            let retrievalDate = new Date().toISOString();
+            return { path: dataPath, headers, retrievalDate };
+        } else {
+            return await this.read_(locations);
+        }
+    }
+
+    getLocations(url: string): FetchStoreLocations {
         // TODO - handle queries
         let nsurl = $.NSURL.URLWithString(url);
         let group = `${nsurl.host.js}/${nsurl.scheme.js}`;
@@ -124,7 +83,7 @@ class FetchStore implements WebScheme {
         let dataPath = path + `data.${extension}`;
         let headersPath = dataPath + ".headers";
 
-        return { path, dataPath, headersPath, extension, nsurl };
+        return { path, dataPath, headersPath, extension, url };
     }
 
     // fetch will always make a request through the HTTP system
