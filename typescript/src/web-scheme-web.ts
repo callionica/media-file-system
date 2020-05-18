@@ -46,7 +46,7 @@ class WebSchemeWeb implements WebScheme {
                 // Don't return STS to caller
                 delete headers["Strict-Transport-Security"];
 
-                resolve({ status, headers, data });
+                resolve({ url: response.URL.absoluteString.js, status, headers, data });
             }
 
             let dataURL = $.NSURL.URLWithString(request.url);

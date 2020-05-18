@@ -57,6 +57,7 @@ interface NSURLRequest extends OC {
 
 interface NSURLResponse extends OC {
     statusCode: number;
+    URL: NSURL;
     allHeaderFields: NSDictionary;
 };
 
@@ -95,6 +96,7 @@ type WebSchemeRequest = {
 };
 
 type WebSchemeResponse = {
+    url: string,
     status: number,
     headers: WebSchemeHeaders,
     data: NSData,

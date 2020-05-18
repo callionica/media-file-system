@@ -91,18 +91,21 @@ function ${key}(...args) {
 `);
 
     let wrap = `
-function wrapURL(url) {
+function wrapURL(url, schemeOverride) {
     let u = new URL(url);
-    let scheme = u.protocol.substring(0, u.protocol.length - 1);
-    let host = u.host;
-    if (host === "") {
-        host = "_";
-    }
-    let path = u.pathname;
 
-    u.pathname = \`$\{scheme}/$\{host}$\{path}\`;
-    u.host = "callionica.com";
-    u.protocol = "app:";
+    if (u.protocol !== "app") {
+        let scheme = schemeOverride || u.protocol.substring(0, u.protocol.length - 1);
+        let host = u.host;
+        if (host === "") {
+            host = "_";
+        }
+        let path = u.pathname;
+
+        u.pathname = \`$\{scheme}/$\{host}$\{path}\`;
+        u.host = "callionica.com";
+        u.protocol = "app:";
+    }
 
     return u;
 }

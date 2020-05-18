@@ -125,7 +125,7 @@ class WebSchemeFile implements WebScheme {
                 data = $.NSData.data;
             }
 
-            resolve({ status, headers, data });
+            resolve({ url: request.url, status, headers, data });
         });
     }
 }
