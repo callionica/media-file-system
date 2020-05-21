@@ -93,10 +93,3 @@ class KeyboardController {
         this.hideCommands_();
     }
 }
-
-const keyboardController = (function (){
-    let kc = new KeyboardController();
-    document.onkeydown = (e) => kc.onkeydown(e);
-    document.onkeyup = (e) => kc.onkeyup(e);
-    return kc;
-})();

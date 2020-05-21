@@ -44,5 +44,3 @@ class Environment {
         return undefined;
     }
 }
-
-const environment = new Environment();
