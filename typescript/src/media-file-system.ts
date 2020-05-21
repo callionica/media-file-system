@@ -3,7 +3,7 @@
 // Polyfills
 // import 'ts-polyfill/lib/es2019-array';
 
-if (!Array.prototype.flatMap) {
+if (!(Array.prototype as any).flatMap) {
 
     function flatMap(this: any, fn: any) {
         let nonFlat = this.map(fn);
@@ -13,7 +13,7 @@ if (!Array.prototype.flatMap) {
         }, []);
     }
 
-    Array.prototype.flatMap = flatMap as any;
+    (Array.prototype as any).flatMap = flatMap as any;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -79,8 +79,6 @@ declare const $: NSDollar;
 type WKURLSchemeHandler = OC;
 type WKWebView = OC;
 
-declare const console: any;
-
 type WebSchemeHeaders = { [key: string]: string };
 
 function allHeaders(requestOrResponse: { allHeaderFields?: NSDictionary; allHTTPHeaderFields?: NSDictionary }): WebSchemeHeaders {
