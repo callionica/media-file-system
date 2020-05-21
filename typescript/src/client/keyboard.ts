@@ -27,24 +27,32 @@ class KeyboardController {
     commandsVisible: boolean = false;
     commandsVisibleTimeout: any = undefined;
 
+    showCommands() {
+        console.log("Commands:", JSON.stringify(this.commands, null, 2));
+    }
+
     hideCommands() {
+        console.log("Commands: hide");
+    }
+
+    hideCommands_() {
         clearTimeout(this.commandsVisibleTimeout);
         this.commandsVisibleTimeout = undefined;
 
         if (this.commandsVisible) {
             this.commandsVisible = false;
-            console.log("hide commands");
+            this.hideCommands();
             return true;
         }
         return false;
     }
 
-    showCommands() {
+    showCommands_() {
         if (!this.commandsVisible && this.commandsVisibleTimeout == undefined) {
             this.commandsVisibleTimeout = setTimeout(() => {
                 this.commandsVisibleTimeout = undefined;
                 this.commandsVisible = true;
-                console.log("Commands:", JSON.stringify(this.commands, null, 2));
+                this.showCommands();
             }, 2 * 1000);
         }
     }
@@ -53,11 +61,11 @@ class KeyboardController {
         let shortcut = toShortcut(event);
         console.log(shortcut, event);
 
-        let handled = this.hideCommands();
+        let handled = this.hideCommands_();
 
         if (!handled) {
             if (shortcut == "⌘") {
-                this.showCommands();
+                this.showCommands_();
                 return;
             }
 
@@ -82,6 +90,13 @@ class KeyboardController {
         let shortcut = toShortcut(event);
         console.log(shortcut, event);
 
-        this.hideCommands();
+        this.hideCommands_();
     }
 }
+
+const keyboardController = (function (){
+    let kc = new KeyboardController();
+    document.onkeydown = (e) => kc.onkeydown(e);
+    document.onkeyup = (e) => kc.onkeyup(e);
+    return kc;
+})();
