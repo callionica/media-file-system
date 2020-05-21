@@ -9,7 +9,7 @@ class Environment {
 
     getPageID_() {
         var pid = document.location.pathname;
-        
+
         if (pid.endsWith("/index.html")) {
             pid = pid.substr(0, pid.length - "index.html".length);
         }
