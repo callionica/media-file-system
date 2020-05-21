@@ -18,13 +18,21 @@
 			"problemMatcher": []
 		},
 		{
+			"type": "shell",
+			"group": "build",
+			"command": "cd '${workspaceFolder}/typescript/src'&&cat ../js/client/keyboard.js ../js/client/environment.js ../js/client/app.js > ../js/client/_client.js",
+			"label": "Package Client",
+			"problemMatcher": []
+		},
+		{
 			"label": "Build All",
 			"type": "shell",
 			"command": "echo Build Completed ",
 			"dependsOrder": "sequence",
 			"dependsOn": [
 				"Compile",
-				"Package"
+				"Package",
+				"Package Client"
 			],
 			"problemMatcher": [],
 			"group": {
