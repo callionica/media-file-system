@@ -3,6 +3,14 @@
 // - sets innerText of element with id="environment"
 // - creates an isolated data storage environment
 
+function setText(selector: string, value: string): HTMLElement | undefined {
+    let e = document.querySelector(selector) as HTMLElement;
+    if (e) {
+        e.innerText = value;
+    }
+    return e || undefined;
+}
+
 class Environment {
     id: string;
     pageID: string;
@@ -60,10 +68,7 @@ class Environment {
     }
 
     updatePage() {
-        let e = document.getElementById("environment");
-        if (e) {
-            e.innerText = this.id;
-        }
+        setText("#environment", this.id);
         document.body.setAttribute("data-environment-id", this.id);
     }
 }

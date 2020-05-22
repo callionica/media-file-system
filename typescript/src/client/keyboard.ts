@@ -12,12 +12,29 @@ class KeyboardCommand {
     }
 }
 
+// Takes a member function and makes it into a command handler
+function command<K extends PropertyKey, T extends Record<K, () => void>>(o: T, key: K) {
+    return (shortcut: string) => {
+        o[key]();
+        return true;
+    };
+}
+
 function toShortcut(event: KeyboardEvent) {
+
+    function adjustKey(key: string) {
+        if (key === " ") {
+            return "Space";
+        }
+        return ["Meta", "Control", "Alt", "Shift"].includes(key) ? "" : key;
+    }
+
     let command = event.metaKey ? "⌘" : "";
     let control = event.ctrlKey ? "^" : "";
     let alt = event.altKey ? "⌥" : "";
     let shift = event.shiftKey ? "⇧" : "";
-    let key = ["Meta", "Control", "Alt", "Shift"].includes(event.key) ? "" : event.key;
+    let key = adjustKey(event.key);
+
     return `${command}${control}${alt}${shift}${key}`;
 }
 
