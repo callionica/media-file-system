@@ -15,6 +15,7 @@ class KeyboardCommand {
 // Takes a member function and makes it into a command handler
 function command<K extends PropertyKey, T extends Record<K, () => void>>(o: T, key: K) {
     return (shortcut: string) => {
+        console.log(shortcut, key);
         o[key]();
         return true;
     };
@@ -45,7 +46,8 @@ class KeyboardController {
     commandsVisibleTimeout: any = undefined;
 
     showCommands() {
-        console.log("Commands:", JSON.stringify(this.commands, null, 2));
+        // console.log("Commands:", JSON.stringify(this.commands, null, 2));
+        console.log("Commands:", this.commands);
     }
 
     hideCommands() {
