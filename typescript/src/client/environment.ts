@@ -1,3 +1,8 @@
+// Switching the environment:
+// - sets data-environment-id attribute on body
+// - sets innerText of element with id="environment"
+// - creates an isolated data storage environment
+
 class Environment {
     id: string;
     pageID: string;
@@ -6,7 +11,7 @@ class Environment {
     constructor(id: string = "0") {
         this.pageID = this.getPageID_();
         this.id = localStorage.getItem(this.getPageID_() + "environment") || id;
-        console.log("Env:", this.id);
+        this.updatePage();
 
         this.commands = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(key => {
             let shortcut = "^" + key;
@@ -35,7 +40,7 @@ class Environment {
     switchTo(id: string): boolean {
         this.id = id;
         localStorage.setItem(this.getPageID_() + "environment", id);
-        console.log("Env:", this.id);
+        this.updatePage();
         return true;
     }
 
@@ -52,5 +57,13 @@ class Environment {
             return JSON.parse(json) as T;
         }
         return undefined;
+    }
+
+    updatePage() {
+        let e = document.getElementById("environment");
+        if (e) {
+            e.innerText = this.id;
+        }
+        document.body.setAttribute("data-environment-id", this.id);
     }
 }
