@@ -1,8 +1,25 @@
 "use strict";
+// Switching the environment:
+// - sets data-environment-id attribute on body
+// - sets innerText of element with id="environment"
+// - creates an isolated data storage environment
+function setText(selector, value) {
+    let e = document.querySelector(selector);
+    if (e) {
+        e.innerText = value;
+    }
+    return e || undefined;
+}
 class Environment {
     constructor(id = "0") {
-        this.id = id;
         this.pageID = this.getPageID_();
+        this.id = localStorage.getItem(this.getPageID_() + "environment") || id;
+        this.updatePage();
+        this.commands = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(key => {
+            let name = "Environment " + key;
+            let shortcut = "^" + key;
+            return new KeyboardCommand(name, shortcut, (s) => this.switchTo(key));
+        });
     }
     getPageID_() {
         var pid = document.location.pathname;
@@ -19,6 +36,9 @@ class Environment {
     }
     switchTo(id) {
         this.id = id;
+        localStorage.setItem(this.getPageID_() + "environment", id);
+        this.updatePage();
+        return true;
     }
     setItem(item, value) {
         let key = this.getKey_(item);
@@ -33,6 +53,9 @@ class Environment {
         }
         return undefined;
     }
+    updatePage() {
+        setText("#environment", this.id);
+        document.body.setAttribute("data-environment-id", this.id);
+    }
 }
-const environment = new Environment();
 //# sourceMappingURL=environment.js.map

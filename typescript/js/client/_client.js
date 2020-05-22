@@ -1,0 +1,204 @@
+"use strict";
+class KeyboardCommand {
+    constructor(name, shortcut, action) {
+        this.name = name;
+        this.shortcut = shortcut;
+        this.enabled = true;
+        this.action = action;
+    }
+}
+// Takes a member function and makes it into a command handler
+function command(o, key) {
+    return (shortcut) => {
+        console.log(shortcut, key);
+        o[key]();
+        return true;
+    };
+}
+function toShortcut(event) {
+    function adjustKey(key) {
+        if (key === " ") {
+            return "Space";
+        }
+        return ["Meta", "Control", "Alt", "Shift"].includes(key) ? "" : key;
+    }
+    let command = event.metaKey ? "⌘" : "";
+    let control = event.ctrlKey ? "^" : "";
+    let alt = event.altKey ? "⌥" : "";
+    let shift = event.shiftKey ? "⇧" : "";
+    let key = adjustKey(event.key);
+    return `${command}${control}${alt}${shift}${key}`;
+}
+class KeyboardController {
+    constructor() {
+        this.commands = [];
+        this.commandsVisible = false;
+        this.commandsVisibleTimeout = undefined;
+    }
+    showCommands() {
+        // console.log("Commands:", JSON.stringify(this.commands, null, 2));
+        console.log("Commands:", this.commands);
+    }
+    hideCommands() {
+        console.log("Commands: hide");
+    }
+    hideCommands_() {
+        clearTimeout(this.commandsVisibleTimeout);
+        this.commandsVisibleTimeout = undefined;
+        if (this.commandsVisible) {
+            this.commandsVisible = false;
+            this.hideCommands();
+            return true;
+        }
+        return false;
+    }
+    showCommands_() {
+        if (!this.commandsVisible && this.commandsVisibleTimeout == undefined) {
+            this.commandsVisibleTimeout = setTimeout(() => {
+                this.commandsVisibleTimeout = undefined;
+                this.commandsVisible = true;
+                this.showCommands();
+            }, 2 * 1000);
+        }
+    }
+    onkeydown(event) {
+        let shortcut = toShortcut(event);
+        console.log(shortcut, event);
+        let handled = this.hideCommands_();
+        if (!handled) {
+            if (shortcut == "⌘") {
+                this.showCommands_();
+                return;
+            }
+            let commands = this.commands.filter(command => command.enabled && (command.shortcut === shortcut));
+            handled = false;
+            for (let command of commands) {
+                handled = command.action(shortcut);
+                if (handled) {
+                    break;
+                }
+            }
+        }
+        if (handled) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+    onkeyup(event) {
+        let shortcut = toShortcut(event);
+        console.log(shortcut, event);
+        this.hideCommands_();
+    }
+}
+//# sourceMappingURL=keyboard.js.map"use strict";
+// Switching the environment:
+// - sets data-environment-id attribute on body
+// - sets innerText of element with id="environment"
+// - creates an isolated data storage environment
+function setText(selector, value) {
+    let e = document.querySelector(selector);
+    if (e) {
+        e.innerText = value;
+    }
+    return e || undefined;
+}
+class Environment {
+    constructor(id = "0") {
+        this.pageID = this.getPageID_();
+        this.id = localStorage.getItem(this.getPageID_() + "environment") || id;
+        this.updatePage();
+        this.commands = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(key => {
+            let name = "Environment " + key;
+            let shortcut = "^" + key;
+            return new KeyboardCommand(name, shortcut, (s) => this.switchTo(key));
+        });
+    }
+    getPageID_() {
+        var pid = document.location.pathname;
+        if (pid.endsWith("/index.html")) {
+            pid = pid.substr(0, pid.length - "index.html".length);
+        }
+        if (!pid.endsWith("/")) {
+            pid = pid + "/";
+        }
+        return pid;
+    }
+    getKey_(item) {
+        return this.id + "/" + this.pageID + item;
+    }
+    switchTo(id) {
+        this.id = id;
+        localStorage.setItem(this.getPageID_() + "environment", id);
+        this.updatePage();
+        return true;
+    }
+    setItem(item, value) {
+        let key = this.getKey_(item);
+        let json = JSON.stringify(value, null, 2);
+        localStorage.setItem(key, json);
+    }
+    getItem(item) {
+        let key = this.getKey_(item);
+        let json = localStorage.getItem(key);
+        if (json != null) {
+            return JSON.parse(json);
+        }
+        return undefined;
+    }
+    updatePage() {
+        setText("#environment", this.id);
+        document.body.setAttribute("data-environment-id", this.id);
+    }
+}
+//# sourceMappingURL=environment.js.map"use strict";
+class Player {
+    constructor() {
+        this.commands = [
+            new KeyboardCommand("Play/Pause", "Space", command(this, "playPause")),
+            new KeyboardCommand("Volume: Up", "⇧ArrowUp", command(this, "volumeUp")),
+            new KeyboardCommand("Volume: Down", "⇧ArrowDown", command(this, "volumeDown")),
+        ];
+    }
+    playPause() {
+    }
+    volumeUp() {
+    }
+    volumeDown() {
+    }
+}
+//# sourceMappingURL=player.js.map"use strict";
+class App {
+    constructor() {
+        this.environment = new Environment();
+        this.player = new Player();
+        this.keyboardController = (() => {
+            let keyboardController = new KeyboardController();
+            keyboardController.commands.push(...this.environment.commands);
+            keyboardController.commands.push(...this.player.commands);
+            document.onkeydown = (e) => keyboardController.onkeydown(e);
+            document.onkeyup = (e) => keyboardController.onkeyup(e);
+            return keyboardController;
+        })();
+    }
+    up() {
+        console.log("up");
+    }
+    down() {
+        console.log("down");
+    }
+}
+//# sourceMappingURL=app.js.map"use strict";
+function ready(callback) {
+    if (document.readyState != "loading") {
+        callback();
+    }
+    else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', callback);
+    }
+}
+let app;
+function init() {
+    app = new App();
+}
+ready(init);
+//# sourceMappingURL=ready.js.map
