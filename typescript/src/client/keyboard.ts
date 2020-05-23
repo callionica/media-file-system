@@ -12,12 +12,19 @@ class KeyboardCommand {
     }
 }
 
+class Control {
+    keyboardDisabled: boolean = false;
+}
+
 // Takes a member function and makes it into a command handler
-function command<K extends PropertyKey, T extends Record<K, () => void>>(o: T, key: K) {
+function command<K extends PropertyKey, T extends Record<K, () => void> & { keyboardDisabled?: boolean }>(o: T, key: K) {
     return (shortcut: string) => {
         console.log(shortcut, key);
-        o[key]();
-        return true;
+        if (!o.keyboardDisabled) {
+            o[key]();
+            return true;
+        }
+        return false;
     };
 }
 
