@@ -35,7 +35,10 @@ function toShortcut(event: KeyboardEvent) {
             " ": "Space",
             "Backspace": "Delete",
             "Enter": "Enter",
-            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "Meta": "",
+            "Control": ":",
+            "Alt": "",
+            "Shift": "",
             "ArrowUp": "↑",
             "ArrowDown": "↓",
             "ArrowLeft": "←",
@@ -44,7 +47,7 @@ function toShortcut(event: KeyboardEvent) {
 
         let replacement = replacements[key];
 
-        if (replacement) {
+        if (replacement !== undefined) {
             return replacement;
         }
 
