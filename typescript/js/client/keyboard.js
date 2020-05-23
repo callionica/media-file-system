@@ -46,7 +46,7 @@ class KeyboardController {
         this.commands = [];
         this.commandsVisible = false;
         this.commandsVisibleTimeout = undefined;
-        this.commands.push(new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging")));
+        this.commands.push(new KeyboardCommand("Keyboard: Logging on/off", "L", command(this, "toggleLogging")));
     }
     toggleLogging() {
         this.enableLogging = !this.enableLogging;

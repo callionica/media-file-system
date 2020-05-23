@@ -46,7 +46,7 @@ class KeyboardController {
         this.commands = [];
         this.commandsVisible = false;
         this.commandsVisibleTimeout = undefined;
-        this.commands.push(new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging")));
+        this.commands.push(new KeyboardCommand("Keyboard: Logging on/off", "L", command(this, "toggleLogging")));
     }
     toggleLogging() {
         this.enableLogging = !this.enableLogging;
@@ -202,20 +202,20 @@ class List {
 class Player {
     constructor() {
         this.commands = [
-            new KeyboardCommand("Player: Play/Pause", "Space", command(this, "playPause")),
-            new KeyboardCommand("Player: Play/Pause", "F8", command(this, "playPause")),
-            new KeyboardCommand("Player: Jump Forward", "→", command(this, "jumpForward")),
-            new KeyboardCommand("Player: Jump Forward", "F9", command(this, "jumpForward")),
-            new KeyboardCommand("Player: Jump to End", "⇧→", command(this, "jumpEnd")),
-            new KeyboardCommand("Player: Jump Back", "←", command(this, "jumpBack")),
-            new KeyboardCommand("Player: Jump Back", "F7", command(this, "jumpBack")),
-            new KeyboardCommand("Player: Jump to Start", "⇧←", command(this, "jumpStart")),
-            new KeyboardCommand("Player: Volume Up", "⇧↑", command(this, "volumeUp")),
-            new KeyboardCommand("Player: Volume Down", "⇧↓", command(this, "volumeDown")),
-            new KeyboardCommand("Player: Subtitles On/Off", "S", command(this, "toggleSubtitles")),
-            new KeyboardCommand("Player: Subtitles On/Off", "ClosedCaptionToggle", command(this, "toggleSubtitles")),
-            new KeyboardCommand("Player: Subtitles Next", "⇧S", command(this, "nextSubtitle")),
-            new KeyboardCommand("Player: Picture-in-picture On/Off", "P", command(this, "togglePIP")),
+            new KeyboardCommand("Player: Play/pause", "Space", command(this, "playPause")),
+            new KeyboardCommand("Player: Play/pause", "F8", command(this, "playPause")),
+            new KeyboardCommand("Player: Jump forward", "→", command(this, "jumpForward")),
+            new KeyboardCommand("Player: Jump forward", "F9", command(this, "jumpForward")),
+            new KeyboardCommand("Player: Jump to end", "⇧→", command(this, "jumpEnd")),
+            new KeyboardCommand("Player: Jump back", "←", command(this, "jumpBack")),
+            new KeyboardCommand("Player: Jump back", "F7", command(this, "jumpBack")),
+            new KeyboardCommand("Player: Jump to start", "⇧←", command(this, "jumpStart")),
+            new KeyboardCommand("Player: Volume up", "⇧↑", command(this, "volumeUp")),
+            new KeyboardCommand("Player: Volume down", "⇧↓", command(this, "volumeDown")),
+            new KeyboardCommand("Player: Subtitles on/off", "S", command(this, "toggleSubtitles")),
+            new KeyboardCommand("Player: Subtitles on/off", "ClosedCaptionToggle", command(this, "toggleSubtitles")),
+            new KeyboardCommand("Player: Next subtitle", "⇧S", command(this, "nextSubtitle")),
+            new KeyboardCommand("Player: Picture-in-picture on/off", "P", command(this, "togglePIP")),
         ];
     }
     playPause() {

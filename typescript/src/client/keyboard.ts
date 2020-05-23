@@ -63,7 +63,7 @@ class KeyboardController {
 
     constructor() {
         this.commands.push(
-            new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging"))
+            new KeyboardCommand("Keyboard: Logging on/off", "L", command(this, "toggleLogging"))
         );
     }
 
