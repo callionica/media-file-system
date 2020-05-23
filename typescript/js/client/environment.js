@@ -16,8 +16,8 @@ class Environment {
         this.id = localStorage.getItem(this.getPageID_() + "environment") || id;
         this.updatePage();
         this.commands = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].map(key => {
-            let name = "Environment " + key;
-            let shortcut = "^" + key;
+            let name = "Environment: " + key;
+            let shortcut = "" + key;
             return new KeyboardCommand(name, shortcut, (s) => this.switchTo(key));
         });
     }
