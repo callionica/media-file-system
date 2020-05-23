@@ -26,6 +26,8 @@ function toShortcut(event: KeyboardEvent) {
     function adjustKey(key: string) {
         const replacements: { [key: string]: string } = {
             " ": "Space",
+            "Backspace": "Delete",
+            "Enter": "Enter",
             "Meta": "", "Control": ":", "Alt": "", "Shift": "",
             "ArrowUp": "↑",
             "ArrowDown": "↓",
@@ -52,10 +54,22 @@ function toShortcut(event: KeyboardEvent) {
 }
 
 class KeyboardController {
+    enableLogging: boolean = false;
+
     commands: KeyboardCommand[] = [];
 
     commandsVisible: boolean = false;
     commandsVisibleTimeout: any = undefined;
+
+    constructor() {
+        this.commands.push(
+            new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging"))
+        );
+    }
+
+    toggleLogging() {
+        this.enableLogging = !this.enableLogging;
+    }
 
     showCommands() {
         // console.log("Commands:", JSON.stringify(this.commands, null, 2));
@@ -90,7 +104,9 @@ class KeyboardController {
 
     onkeydown(event: KeyboardEvent) {
         let shortcut = toShortcut(event);
-        console.log(event, shortcut);
+        if (this.enableLogging) {
+            console.log("onkeydown", event, shortcut);
+        }
 
         let handled = this.hideCommands_();
 
@@ -119,7 +135,9 @@ class KeyboardController {
 
     onkeyup(event: KeyboardEvent) {
         let shortcut = toShortcut(event);
-        console.log("up", event, shortcut);
+        if (this.enableLogging) {
+            console.log("onkeyup", event, shortcut);
+        }
 
         this.hideCommands_();
     }

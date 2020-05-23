@@ -3,13 +3,13 @@ class List {
 
     constructor() {
         this.commands = [
-            // Up a level
             new KeyboardCommand("List: Back", "Delete", command(this, "back")),
-            // Down a level if we've already been down a level
             new KeyboardCommand("List: Forward", "⇧Delete", command(this, "forward")),
-            new KeyboardCommand("List: Forward", "↑", command(this, "previous")),
-            new KeyboardCommand("List: Forward", "↓", command(this, "next")),
-            
+            new KeyboardCommand("List: Previous item", "↑", command(this, "previous")),
+            new KeyboardCommand("List: Next item", "↓", command(this, "next")),
+            new KeyboardCommand("List: First item", "⌘↑", command(this, "first")),
+            new KeyboardCommand("List: Last item", "⌘↓", command(this, "last")),
+            new KeyboardCommand("List: Activate item", "Enter", command(this, "activate")),
         ];
     }
 
@@ -23,5 +23,14 @@ class List {
     }
 
     next() {
+    }
+
+    first() {
+    }
+
+    last() {
+    }
+
+    activate() {
     }
 }
