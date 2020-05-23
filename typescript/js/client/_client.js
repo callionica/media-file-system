@@ -17,10 +17,21 @@ function command(o, key) {
 }
 function toShortcut(event) {
     function adjustKey(key) {
-        if (key === " ") {
-            return "Space";
+        const replacements = {
+            " ": "Space",
+            "Backspace": "Delete",
+            "Enter": "Enter",
+            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "ArrowUp": "↑",
+            "ArrowDown": "↓",
+            "ArrowLeft": "←",
+            "ArrowRight": "→",
+        };
+        let replacement = replacements[key];
+        if (replacement) {
+            return replacement;
         }
-        return ["Meta", "Control", "Alt", "Shift"].includes(key) ? "" : key;
+        return key.toUpperCase();
     }
     let command = event.metaKey ? "⌘" : "";
     let control = event.ctrlKey ? "^" : "";
@@ -31,9 +42,14 @@ function toShortcut(event) {
 }
 class KeyboardController {
     constructor() {
+        this.enableLogging = false;
         this.commands = [];
         this.commandsVisible = false;
         this.commandsVisibleTimeout = undefined;
+        this.commands.push(new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging")));
+    }
+    toggleLogging() {
+        this.enableLogging = !this.enableLogging;
     }
     showCommands() {
         // console.log("Commands:", JSON.stringify(this.commands, null, 2));
@@ -63,7 +79,9 @@ class KeyboardController {
     }
     onkeydown(event) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        if (this.enableLogging) {
+            console.log("onkeydown", event, shortcut);
+        }
         let handled = this.hideCommands_();
         if (!handled) {
             if (shortcut == "⌘") {
@@ -86,7 +104,9 @@ class KeyboardController {
     }
     onkeyup(event) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        if (this.enableLogging) {
+            console.log("onkeyup", event, shortcut);
+        }
         this.hideCommands_();
     }
 }
@@ -151,12 +171,51 @@ class Environment {
     }
 }
 //# sourceMappingURL=environment.js.map"use strict";
+class List {
+    constructor() {
+        this.commands = [
+            new KeyboardCommand("List: Back", "Delete", command(this, "back")),
+            new KeyboardCommand("List: Forward", "⇧Delete", command(this, "forward")),
+            new KeyboardCommand("List: Previous item", "↑", command(this, "previous")),
+            new KeyboardCommand("List: Next item", "↓", command(this, "next")),
+            new KeyboardCommand("List: First item", "⌘↑", command(this, "first")),
+            new KeyboardCommand("List: Last item", "⌘↓", command(this, "last")),
+            new KeyboardCommand("List: Activate item", "Enter", command(this, "activate")),
+        ];
+    }
+    back() {
+    }
+    forward() {
+    }
+    previous() {
+    }
+    next() {
+    }
+    first() {
+    }
+    last() {
+    }
+    activate() {
+    }
+}
+//# sourceMappingURL=list.js.map"use strict";
 class Player {
     constructor() {
         this.commands = [
             new KeyboardCommand("Play/Pause", "Space", command(this, "playPause")),
-            new KeyboardCommand("Volume: Up", "⇧ArrowUp", command(this, "volumeUp")),
-            new KeyboardCommand("Volume: Down", "⇧ArrowDown", command(this, "volumeDown")),
+            new KeyboardCommand("Play/Pause", "F8", command(this, "playPause")),
+            new KeyboardCommand("Jump: Forward", "→", command(this, "jumpForward")),
+            new KeyboardCommand("Jump: Forward", "F9", command(this, "jumpForward")),
+            new KeyboardCommand("Jump: End", "⇧→", command(this, "jumpEnd")),
+            new KeyboardCommand("Jump: Back", "←", command(this, "jumpBack")),
+            new KeyboardCommand("Jump: Back", "F7", command(this, "jumpBack")),
+            new KeyboardCommand("Jump: Start", "⇧←", command(this, "jumpStart")),
+            new KeyboardCommand("Volume: Up", "⇧↑", command(this, "volumeUp")),
+            new KeyboardCommand("Volume: Down", "⇧↓", command(this, "volumeDown")),
+            new KeyboardCommand("Subtitles: On/Off", "S", command(this, "toggleSubtitles")),
+            new KeyboardCommand("Subtitles: On/Off", "ClosedCaptionToggle", command(this, "toggleSubtitles")),
+            new KeyboardCommand("Subtitles: Next", "⇧S", command(this, "nextSubtitle")),
+            new KeyboardCommand("Picture-in-picture: On/Off", "P", command(this, "togglePIP")),
         ];
     }
     playPause() {
@@ -165,15 +224,31 @@ class Player {
     }
     volumeDown() {
     }
+    toggleSubtitles() {
+    }
+    nextSubtitle() {
+    }
+    jumpForward() {
+    }
+    jumpBack() {
+    }
+    jumpStart() {
+    }
+    jumpEnd() {
+    }
+    togglePIP() {
+    }
 }
 //# sourceMappingURL=player.js.map"use strict";
 class App {
     constructor() {
         this.environment = new Environment();
+        this.list = new List();
         this.player = new Player();
         this.keyboardController = (() => {
             let keyboardController = new KeyboardController();
             keyboardController.commands.push(...this.environment.commands);
+            keyboardController.commands.push(...this.list.commands);
             keyboardController.commands.push(...this.player.commands);
             document.onkeydown = (e) => keyboardController.onkeydown(e);
             document.onkeyup = (e) => keyboardController.onkeyup(e);

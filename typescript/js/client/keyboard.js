@@ -17,10 +17,21 @@ function command(o, key) {
 }
 function toShortcut(event) {
     function adjustKey(key) {
-        if (key === " ") {
-            return "Space";
+        const replacements = {
+            " ": "Space",
+            "Backspace": "Delete",
+            "Enter": "Enter",
+            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "ArrowUp": "↑",
+            "ArrowDown": "↓",
+            "ArrowLeft": "←",
+            "ArrowRight": "→",
+        };
+        let replacement = replacements[key];
+        if (replacement) {
+            return replacement;
         }
-        return ["Meta", "Control", "Alt", "Shift"].includes(key) ? "" : key;
+        return key.toUpperCase();
     }
     let command = event.metaKey ? "⌘" : "";
     let control = event.ctrlKey ? "^" : "";
@@ -31,9 +42,14 @@ function toShortcut(event) {
 }
 class KeyboardController {
     constructor() {
+        this.enableLogging = false;
         this.commands = [];
         this.commandsVisible = false;
         this.commandsVisibleTimeout = undefined;
+        this.commands.push(new KeyboardCommand("Keyboard: Logging On/Off", "L", command(this, "toggleLogging")));
+    }
+    toggleLogging() {
+        this.enableLogging = !this.enableLogging;
     }
     showCommands() {
         // console.log("Commands:", JSON.stringify(this.commands, null, 2));
@@ -63,7 +79,9 @@ class KeyboardController {
     }
     onkeydown(event) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        if (this.enableLogging) {
+            console.log("onkeydown", event, shortcut);
+        }
         let handled = this.hideCommands_();
         if (!handled) {
             if (shortcut == "⌘") {
@@ -86,7 +104,9 @@ class KeyboardController {
     }
     onkeyup(event) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        if (this.enableLogging) {
+            console.log("onkeyup", event, shortcut);
+        }
         this.hideCommands_();
     }
 }
