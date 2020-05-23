@@ -24,10 +24,22 @@ function command<K extends PropertyKey, T extends Record<K, () => void>>(o: T, k
 function toShortcut(event: KeyboardEvent) {
 
     function adjustKey(key: string) {
-        if (key === " ") {
-            return "Space";
+        const replacements: { [key: string]: string } = {
+            " ": "Space",
+            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "ArrowUp": "↑",
+            "ArrowDown": "↓",
+            "ArrowLeft": "←",
+            "ArrowRight": "→",
+        };
+
+        let replacement = replacements[key];
+
+        if (replacement) {
+            return replacement;
         }
-        return ["Meta", "Control", "Alt", "Shift"].includes(key) ? "" : key;
+
+        return key.toUpperCase();
     }
 
     let command = event.metaKey ? "⌘" : "";
@@ -78,7 +90,7 @@ class KeyboardController {
 
     onkeydown(event: KeyboardEvent) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        console.log(event, shortcut);
 
         let handled = this.hideCommands_();
 
@@ -107,7 +119,7 @@ class KeyboardController {
 
     onkeyup(event: KeyboardEvent) {
         let shortcut = toShortcut(event);
-        console.log(shortcut, event);
+        console.log("up", event, shortcut);
 
         this.hideCommands_();
     }

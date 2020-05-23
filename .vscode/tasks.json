@@ -20,7 +20,7 @@
 		{
 			"type": "shell",
 			"group": "build",
-			"command": "cd '${workspaceFolder}/typescript/src'&&cat ../js/client/keyboard.js ../js/client/environment.js ../js/client/player.js ../js/client/app.js ../js/client/ready.js > ../js/client/_client.js",
+			"command": "cd '${workspaceFolder}/typescript/src'&&cat ../js/client/keyboard.js ../js/client/environment.js ../js/client/list.js ../js/client/player.js ../js/client/app.js ../js/client/ready.js > ../js/client/_client.js",
 			"label": "Package Client",
 			"problemMatcher": []
 		},
