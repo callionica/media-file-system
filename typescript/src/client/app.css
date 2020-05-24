@@ -1,0 +1,42 @@
+html {
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+* {
+    border:  0px;
+    margin:  0px;
+    padding: 0px;
+}
+
+img {
+    object-fit: contain;
+}
+
+:root {
+    --width: 100vw;
+}
+
+#environment {
+    position: fixed;
+}
+
+#player {
+    background-color: aqua;
+    width: var(--width);
+    height: calc(9/16 * var(--width));
+    transition: height 0.6s ease;
+}
+
+#player[data-layout='mini'] {
+    background-color: aqua;
+    height: calc(3/16 * var(--width));
+}
+
+#library {
+    background-color: pink;
+    min-height: 100vw;
+}

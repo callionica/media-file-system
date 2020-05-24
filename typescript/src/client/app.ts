@@ -11,6 +11,7 @@ class App {
         this.player = new Player();
 
         this.commands = [
+            new KeyboardCommand("App: Video", "V", command(this, "video")),
             new KeyboardCommand("App: Weather", "W", command(this, "showWeather")),
             new KeyboardCommand("App: Time", "T", command(this, "showTime")),
         ];
@@ -35,5 +36,16 @@ class App {
     }
 
     showTime() {
+    }
+
+    video() {
+        let player = document.getElementById("player")!;
+        let layout = player.getAttribute("data-layout") || "maxi";
+        if (layout != "mini") {
+            layout = "mini";
+        } else {
+            layout = "maxi";
+        }
+        player.setAttribute("data-layout", layout);
     }
 }

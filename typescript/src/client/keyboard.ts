@@ -36,7 +36,7 @@ function toShortcut(event: KeyboardEvent) {
             "Backspace": "Delete",
             "Enter": "Enter",
             "Meta": "",
-            "Control": ":",
+            "Control": "",
             "Alt": "",
             "Shift": "",
             "ArrowUp": "↑",
@@ -121,17 +121,16 @@ class KeyboardController {
         let handled = this.hideCommands_();
 
         if (!handled) {
-            if (shortcut == "⌘") {
+            if (shortcut == "^") {
                 this.showCommands_();
                 return;
             }
 
             let commands = this.commands.filter(command => command.enabled && (command.shortcut === shortcut));
 
-            handled = false;
             for (let command of commands) {
-                handled = command.action(shortcut);
-                if (handled) {
+                handled = true;
+                if (command.action(shortcut)) {
                     break;
                 }
             }
