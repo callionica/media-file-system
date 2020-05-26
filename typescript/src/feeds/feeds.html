@@ -72,6 +72,8 @@
             <p class="description"></p>
             <p class="genres"></p>
             <p class="duration"></p>
+            <a class="html">HTML</a>
+            <a class="rss">RSS</a>
             `;
 
             e.querySelector(".image").src = feed.image;
@@ -79,6 +81,8 @@
             e.querySelector(".description").innerText = feed.description;
             e.querySelector(".genres").innerText = feed.genres;
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
+            e.querySelector(".html").href = feed.html;
+            e.querySelector(".rss").href = feed.rss;
 
             return e;
         }
