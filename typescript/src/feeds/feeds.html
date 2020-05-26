@@ -43,27 +43,63 @@
             return data;
         }
 
-        async function doIt() {
+        async function getFeeds() {
             let data = await load(url);
             let results = [...data.querySelectorAll("outline[type='rss']")];
             console.log(results);
-            let mapped = results.map(o => {
+            let feeds = results.map(o => {
                 return {
+                    channel: o.parentNode.getAttribute("text"),
                     title: o.getAttribute("text"),
                     description: o.getAttribute("description"),
                     rss: o.getAttribute("xmlUrl"),
                     html: o.getAttribute("htmlUrl"),
                     image: o.getAttribute("imageHref"),
                     genres: o.getAttribute("bbcgenres"),
-                    typicalDurationMinutes: o.getAttribute("typicalDurationMins"),
+                    typicalDurationMinutes: parseInt(o.getAttribute("typicalDurationMins"), 10) || undefined,
+                    // language: o.getAttribute("language"), // Doesn't match language of text or content
                 };
             });
-            console.log(mapped);
+            console.log(feeds);
+            return feeds;
         }
 
-        doIt().then(x => {
-            console.log("Done");
-        });
+        function feedToHTML(feed) {
+            let e = document.createElement("div");
+            e.innerHTML = `
+            <h1 class="title"></h1>
+            <img class="image">
+            <p class="description"></p>
+            <p class="genres"></p>
+            <p class="duration"></p>
+            `;
+
+            e.querySelector(".image").src = feed.image;
+            e.querySelector(".title").innerText = feed.title;
+            e.querySelector(".description").innerText = feed.description;
+            e.querySelector(".genres").innerText = feed.genres;
+            e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
+
+            return e;
+        }
+
+        function ready(callback) {
+            if (document.readyState != "loading") {
+                callback();
+            } else if (document.addEventListener) {
+                document.addEventListener('DOMContentLoaded', callback);
+            }
+        }
+
+        function init() {
+            getFeeds().then(feeds => {
+                document.body.append(...feeds.map(feedToHTML));
+                console.log("Done");
+            });
+        }
+
+        ready(init);
+
     </script>
 </head>
 
