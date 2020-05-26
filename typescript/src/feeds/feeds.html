@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBC Feeds</title>
+    <script>
+        let url = "https://www.bbc.co.uk/podcasts.opml";
+
+        async function load(url) {
+            async function parseXml(text) {
+                return await (new window.DOMParser()).parseFromString(text, "text/xml");
+            }
+
+            let text = localStorage.getItem(url);
+            let data;
+
+            if (text) {
+                data = await parseXml(text);
+                let modified = data.querySelector("dateModified");
+                if (modified) {
+                    modified = new Date(modified.textContent);
+                    console.log("Saved data from", modified);
+                    const hour = 60 * 60 * 1000;
+                    if ((Date.now() - modified) < (23 * hour)) {
+                        console.log("Using saved data");
+                        return data;
+                    }
+                }
+            }
+
+            try {
+                console.log("Fetching data");
+                let response = await fetch(url);
+                text = await response.text();
+                data = await parseXml(text);
+                localStorage.setItem(url, text);
+            } catch (e) {
+                console.log("Fetch failed");
+            }
+
+            return data;
+        }
+
+        async function doIt() {
+            let data = await load(url);
+            let results = [...data.querySelectorAll("outline[type='rss']")];
+            console.log(results);
+            let mapped = results.map(o => {
+                return {
+                    title: o.getAttribute("text"),
+                    description: o.getAttribute("description"),
+                    rss: o.getAttribute("xmlUrl"),
+                    html: o.getAttribute("htmlUrl"),
+                    image: o.getAttribute("imageHref"),
+                    genres: o.getAttribute("bbcgenres"),
+                    typicalDurationMinutes: o.getAttribute("typicalDurationMins"),
+                };
+            });
+            console.log(mapped);
+        }
+
+        doIt().then(x => {
+            console.log("Done");
+        });
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
