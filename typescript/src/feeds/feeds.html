@@ -44,24 +44,53 @@
         }
 
         async function getFeeds() {
+            let genreSet = {};
+            let channels = {};
             let data = await load(url);
             let results = [...data.querySelectorAll("outline[type='rss']")];
             console.log(results);
             let feeds = results.map(o => {
-                return {
-                    channel: o.parentNode.getAttribute("text"),
-                    title: o.getAttribute("text"),
-                    description: o.getAttribute("description"),
+                let genres = o.getAttribute("bbcgenres").split(",").map(g => g.trim());
+                
+                let title = o.getAttribute("text").trim();
+                let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
+                let result = {
+                    channel: o.parentNode.getAttribute("text").trim(),
+                    title,
+                    sortTitle,
+                    description: o.getAttribute("description").trim(),
                     rss: o.getAttribute("xmlUrl"),
                     html: o.getAttribute("htmlUrl"),
                     image: o.getAttribute("imageHref"),
-                    genres: o.getAttribute("bbcgenres"),
+                    genres,
                     typicalDurationMinutes: parseInt(o.getAttribute("typicalDurationMins"), 10) || undefined,
                     // language: o.getAttribute("language"), // Doesn't match language of text or content
                 };
+
+                for (let genre of genres) {
+                    let g = genreSet[genre];
+                    if (g === undefined) {
+                        g = [];
+                        genreSet[genre] = g;
+                    }
+                    g.push(result);
+                }
+
+                let c = channels[result.channel];
+                if (c === undefined) {
+                    c = [];
+                    channels[result.channel] = c;
+                }
+                c.push(result);
+
+                return result;
             });
-            console.log(feeds);
-            return feeds;
+            
+            feeds.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }) );
+
+            let result = { feeds, genres: genreSet, channels };
+            console.log(result);
+            return result;
         }
 
         function feedToHTML(feed) {
@@ -79,7 +108,7 @@
             e.querySelector(".image").src = feed.image;
             e.querySelector(".title").innerText = feed.title;
             e.querySelector(".description").innerText = feed.description;
-            e.querySelector(".genres").innerText = feed.genres;
+            e.querySelector(".genres").innerText = feed.genres.join(", ");
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
             e.querySelector(".html").href = feed.html;
             e.querySelector(".rss").href = feed.rss;
@@ -96,8 +125,8 @@
         }
 
         function init() {
-            getFeeds().then(feeds => {
-                document.body.append(...feeds.map(feedToHTML));
+            getFeeds().then(result => {
+                document.body.append(...result.feeds.map(feedToHTML));
                 console.log("Done");
             });
         }
