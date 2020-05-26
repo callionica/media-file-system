@@ -141,6 +141,10 @@ function mimeTypeForExtension(extension: string) {
         "webvtt": "text/vtt",
         "srt": "text/plain",
 
+        "opml": "text/x-opml",
+        "rss": "application/rss+xml",
+        "atom": "application/atom+xml",
+
         "jpg": "image/jpeg",
         "jpeg": "image/jpeg",
         "png": "image/png",
@@ -157,6 +161,7 @@ function mimeTypeForExtension(extension: string) {
         "m4a": "audio/m4a",
         "m3u": "audio/x-mpegurl",
         "m3u8": "audio/x-mpegurl",
+
     };
     return types[ext] || "text/plain";
 }
