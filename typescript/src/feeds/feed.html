@@ -55,7 +55,7 @@
                 text = await response.text();
                 data = await parseXml(text);
                 // Don't have space to store all the RSS feeds
-                // localStorage.setItem(url, text);
+                localStorage.setItem(url, text);
             } catch (e) {
                 console.log("Fetch failed");
             }
@@ -93,38 +93,7 @@
             return undefined;
         }
 
-        function getAttachments(item) {
-            let simpleChannelTitle = "Channel"; // TODO
-            let yyyy_mm_dd = "YYYY-MM-DD"; // TODO
-            let itemTitle = "Item Title"; // TODO
-            let duration = "01:30"; // TODO
-
-            let enclosure = item.querySelector("enclosureSecure") || item.querySelector("enclosure");
-            if (enclosure) {
-                let url = enclosure.getAttribute("url");
-                let size_in_bytes = parseInt(enclosure.getAttribute("length"), 10);
-                let mime_type = enclosure.getAttribute("type");
-
-                let title = `${simpleChannelTitle} - ${yyyy_mm_dd} ${itemTitle}`;
-
-                let duration_in_seconds;
-                if (duration !== undefined) {
-                    duration_in_seconds = secondsFromDuration(duration);
-                }
-
-                return [
-                    {
-                        url,
-                        size_in_bytes,
-                        mime_type,
-                        duration_in_seconds,
-                        title,
-                    }
-                ];
-            }
-
-            return [];
-        }
+        
 
         async function getFeed() {
 
@@ -138,6 +107,11 @@
             let data = await load(url);
 
             let title = sel(data, "title");
+
+            let channel = {
+                title,
+            };
+
             let results = [...data.querySelectorAll("item")];
             console.log(results);
 
@@ -167,6 +141,37 @@
                 let image = sel(o, "image"); // TODO
 
                 let duration = sel(o, "duration");
+
+                function getAttachments(item) {
+                    let simpleChannelTitle = channel.title; // TODO
+                    let itemTitle = title;
+
+                    let enclosure = item.querySelector("enclosureSecure") || item.querySelector("enclosure");
+                    if (enclosure) {
+                        let url = enclosure.getAttribute("url");
+                        let size_in_bytes = parseInt(enclosure.getAttribute("length"), 10);
+                        let mime_type = enclosure.getAttribute("type");
+
+                        let title = `${simpleChannelTitle} - ${yyyy_mm_dd} ${itemTitle}`;
+
+                        let duration_in_seconds;
+                        if (duration !== undefined) {
+                            duration_in_seconds = secondsFromDuration(duration);
+                        }
+
+                        return [
+                            {
+                                url,
+                                size_in_bytes,
+                                mime_type,
+                                duration_in_seconds,
+                                title,
+                            }
+                        ];
+                    }
+
+                    return [];
+                }
 
                 let attachments = getAttachments(o);
 
@@ -201,7 +206,7 @@
             return result;
         }
 
-        function itemToHTML(feed) {
+        function itemToHTML(item) {
             let e = document.createElement("div");
             e.classList.add("item");
 
@@ -216,10 +221,10 @@
             </div>
             `;
 
-            e.querySelector(".image").src = feed.image;
-            e.querySelector(".title").innerText = feed.title;
-            e.querySelector(".description").innerText = feed.summary;
-            e.querySelector(".duration").innerText = feed.attachments[0].duration_in_seconds;
+            e.querySelector(".image").src = item.image;
+            e.querySelector(".title").innerText = item.title;
+            e.querySelector(".description").innerText = item.summary || item.content_text;
+            e.querySelector(".duration").innerText = item.attachments[0].duration_in_seconds;
 
             return e;
         }
