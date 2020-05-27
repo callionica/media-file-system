@@ -105,19 +105,25 @@
             <div class="details">
             <span class="genres"></span>
             <span class="duration"></span> mins
+            </div>
             <a class="html">HTML</a>
             <a class="rss">RSS</a>
             </div>
-            </div>
             `;
+
+            // Add channel to genres for display
+            let shortChannel = feed.channel; // TODO - remove BBC prefix maybe?
+            let genres = [shortChannel, ...feed.genres].join(", ");
 
             e.querySelector(".image").src = feed.image;
             e.querySelector(".title").innerText = feed.title;
             e.querySelector(".description").innerText = feed.description;
-            e.querySelector(".genres").innerText = feed.genres.join(", ");
+            e.querySelector(".genres").innerText = genres;
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
             e.querySelector(".html").href = feed.html;
+            e.querySelector(".html").innerText = `HTML for ${feed.title}`;
             e.querySelector(".rss").href = feed.rss;
+            e.querySelector(".rss").innerText = `RSS for ${feed.title}`;
 
             return e;
         }
@@ -257,6 +263,7 @@
 		}
 
 		.item {
+            position: relative;
 			padding: 2vw;
 			padding-bottom: 3vw;
 		}
@@ -276,7 +283,21 @@
 
 		a:focus {
 			outline: none;
-		}
+        }
+        
+        a.html {
+            display: none;
+        }
+
+        /* Covering link */
+        a.rss {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            opacity: 0;
+        }
 
 		.audio {
 			text-decoration: none;
