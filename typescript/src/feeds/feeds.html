@@ -7,6 +7,15 @@
     <title>BBC Feeds</title>
     <script>
         let url = "https://www.bbc.co.uk/podcasts.opml";
+        let params = new URLSearchParams(document.location.search);
+        let opmlTitle = params.get('s');
+        if (opmlTitle !== undefined) {
+            let key = "opml:" + opmlTitle.toLocaleLowerCase();
+            let storedURL = localStorage.getItem(key);
+            if (storedURL != undefined) {
+                url = storedURL;
+            }
+        }
 
         async function load(url) {
             async function parseXml(text) {
