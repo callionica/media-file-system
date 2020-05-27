@@ -93,8 +93,6 @@
             return undefined;
         }
 
-        
-
         async function getFeed() {
 
             function sel(o, selector) {
@@ -104,12 +102,28 @@
                 }
             }
 
+            function attr(o, selector, attribute) {
+                let e = o.querySelector(selector);
+                if (e) {
+                    return e.getAttribute(attribute).trim();
+                }
+            }
+
             let data = await load(url);
 
+            let author = sel(data, "author");
             let title = sel(data, "title");
+            let description = sel(data, "description");
+            let image = sel(data, "image url");
+            let image1 = attr(data, "image[href]", "href");
+            let link = sel(data, "link");
 
             let channel = {
+                author,
                 title,
+                description,
+                icon: image1 || image,
+                home_page_url: link,
             };
 
             let results = [...data.querySelectorAll("item")];
@@ -198,7 +212,7 @@
 
             let result = {
                 version : "https://jsonfeed.org/version/1",
-                title,
+                ...channel,
                 items
             };
 
@@ -206,7 +220,7 @@
             return result;
         }
 
-        function itemToHTML(item) {
+        function itemToHTML(channel, item) {
             let e = document.createElement("div");
             e.classList.add("item");
 
@@ -221,7 +235,7 @@
             </div>
             `;
 
-            e.querySelector(".image").src = item.image;
+            e.querySelector(".image").src = item.image || channel.icon;
             e.querySelector(".title").innerText = item.title;
             e.querySelector(".description").innerText = item.summary || item.content_text;
             e.querySelector(".duration").innerText = item.attachments[0].duration_in_seconds;
@@ -242,7 +256,7 @@
                 document.title = result.title;
                 let h1 = document.createElement("h1");
                 h1.innerText = result.title;
-                document.body.append(h1, ...result.items.map(itemToHTML));
+                document.body.append(h1, ...result.items.map(item => itemToHTML(result, item)));
                 console.log("Done");
             });
         }
