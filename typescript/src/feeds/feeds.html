@@ -47,6 +47,8 @@
             let genreSet = {};
             let channels = {};
             let data = await load(url);
+
+            let title = data.querySelector("title").textContent.trim();
             let results = [...data.querySelectorAll("outline[type='rss']")];
             console.log(results);
             let feeds = results.map(o => {
@@ -88,7 +90,7 @@
             
             feeds.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }) );
 
-            let result = { feeds, genres: genreSet, channels };
+            let result = { title, feeds, genres: genreSet, channels };
             console.log(result);
             return result;
         }
@@ -138,7 +140,10 @@
 
         function init() {
             getFeeds().then(result => {
-                document.body.append(...result.feeds.map(feedToHTML));
+                document.title = result.title;
+                let h1 = document.createElement("h1");
+                h1.innerText = result.title;
+                document.body.append(h1, ...result.feeds.map(feedToHTML));
                 console.log("Done");
             });
         }
@@ -248,7 +253,15 @@
 
 		.details {
 			color: var(--ink-3);
-			padding-top: calc(2 * var(--adjustment, 0)); /* Visual adjust to counter .content's adjustment */
+            padding-top: calc(2 * var(--adjustment, 0)); /* Visual adjust to counter .content's adjustment */
+
+            /* We want the same line height, but a smaller font-size */
+            /*--local-font-size: 2.5vw;
+            font-size: var(--local-font-size);
+            line-height: calc(var(--line)/var(--local-font-size));*/
+
+            font-size: 2.5vw;
+            line-height: 1.44;
 		}
 
 		.duration:not(:empty)::before {
