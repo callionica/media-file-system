@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBC Feeds</title>
     <script>
-        let url = "https://www.bbc.co.uk/podcasts.opml";
+        let url = "http://podcasts.files.bbci.co.uk/m000hmmf.rss";
         let params = new URLSearchParams(document.location.search);
         let storageKey = params.get('s');
         if (storageKey != undefined) {
-            let key = "feeds:" + storageKey.toLocaleLowerCase();
+            let key = "feed:" + storageKey.toLocaleLowerCase();
             let storedURL = localStorage.getItem(key);
             if (storedURL != undefined) {
                 url = storedURL;
@@ -23,8 +23,8 @@
 
         function navigateTo(item) {
             let title = item.title;
-            store("feed:" + title, item);
-            document.location = `../feed.html?s=${title}`;
+            store("play:" + title, item);
+            document.location = `../play.html?s=${title}`;
         }
 
         async function load(url) {
@@ -37,7 +37,7 @@
 
             if (text) {
                 data = await parseXml(text);
-                let modified = data.querySelector("dateModified");
+                let modified = data.querySelector("pubDate");
                 if (modified) {
                     modified = new Date(modified.textContent);
                     console.log("Found saved data from", modified);
@@ -54,7 +54,8 @@
                 let response = await fetch(url);
                 text = await response.text();
                 data = await parseXml(text);
-                localStorage.setItem(url, text);
+                // Don't have space to store all the RSS feeds
+                // localStorage.setItem(url, text);
             } catch (e) {
                 console.log("Fetch failed");
             }
@@ -62,59 +63,145 @@
             return data;
         }
 
-        async function getFeeds() {
-            let genreSet = {};
-            let channels = {};
+        function secondsFromDuration(time) {
+            // iTunes duration formats
+            const hms = /^(?<h>\d{1,2}):(?<m>\d{1,2}):(?<s>\d{1,2})$/ig;
+            const ms = /^(?<m>\d{1,2}):(?<s>\d{1,2})$/ig;
+            const s = /^(?<s>\d+)$/ig;
+            const formats = [hms, ms, s];
+            for (let format of formats) {
+                let match = format.exec(time);
+                if (match) {
+                    let o = match.groups;
+                    let result = 0;
+                    if (o.h) {
+                        let h = parseInt(o.h, 10);
+                        result += h * 60 * 60;
+                    }
+                    if (o.m) {
+                        let m = parseInt(o.m, 10);
+                        result += m * 60;
+                    }
+                    if (o.s) {
+                        let s = parseInt(o.s, 10);
+                        result += s;
+                    }
+
+                    return result;
+                }
+            }
+            return undefined;
+        }
+
+        function getAttachments(item) {
+            let simpleChannelTitle = "Channel"; // TODO
+            let yyyy_mm_dd = "YYYY-MM-DD"; // TODO
+            let itemTitle = "Item Title"; // TODO
+            let duration = "01:30"; // TODO
+
+            let enclosure = item.querySelector("enclosureSecure") || item.querySelector("enclosure");
+            if (enclosure) {
+                let url = enclosure.getAttribute("url");
+                let size_in_bytes = parseInt(enclosure.getAttribute("length"), 10);
+                let mime_type = enclosure.getAttribute("type");
+
+                let title = `${simpleChannelTitle} - ${yyyy_mm_dd} ${itemTitle}`;
+
+                let duration_in_seconds;
+                if (duration !== undefined) {
+                    duration_in_seconds = secondsFromDuration(duration);
+                }
+
+                return [
+                    {
+                        url,
+                        size_in_bytes,
+                        mime_type,
+                        duration_in_seconds,
+                        title,
+                    }
+                ];
+            }
+
+            return [];
+        }
+
+        async function getFeed() {
+
+            function sel(o, selector) {
+                let e = o.querySelector(selector);
+                if (e) {
+                    return e.textContent.trim();
+                }
+            }
+
             let data = await load(url);
 
-            let title = data.querySelector("title").textContent.trim();
-            let results = [...data.querySelectorAll("outline[type='rss']")];
+            let title = sel(data, "title");
+            let results = [...data.querySelectorAll("item")];
             console.log(results);
-            let feeds = results.map(o => {
-                let genres = o.getAttribute("bbcgenres").split(",").map(g => g.trim());
+
+            let items = results.map(o => {
                 
-                let title = o.getAttribute("text").trim();
+                let title = sel(o, "title");
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
+
+                let description = sel(o, "description");
+                let subtitle = sel(o, "subtitle");
+
+                let date_published;
+                let yyyy_mm_dd;
+
+                let pubDate = sel(o, "pubDate");
+                if (pubDate != undefined) {
+                    date_published = new Date(pubDate).toISOString();
+                    yyyy_mm_dd = date_published.substring(0, "yyyy-mm-dd".length);
+                }
+
+                let id = sel(o, "guid");
+
+                let author = sel(o, "author");
+
+                let url = sel(o, "link");
+
+                let image = sel(o, "image"); // TODO
+
+                let duration = sel(o, "duration");
+
+                let attachments = getAttachments(o);
+
                 let result = {
-                    channel: o.parentNode.getAttribute("text").trim(),
+                    id,
+                    author: { name: author },
                     title,
+                    summary: subtitle,
+                    url,
+                    image,
+                    content_text: description,
+                    date_published,
+                    attachments,
+
+                    // Extras
                     sortTitle,
-                    description: o.getAttribute("description").trim(),
-                    rss: o.getAttribute("xmlUrl"),
-                    html: o.getAttribute("htmlUrl"),
-                    image: o.getAttribute("imageHref"),
-                    genres,
-                    typicalDurationMinutes: parseInt(o.getAttribute("typicalDurationMins"), 10) || undefined,
-                    // language: o.getAttribute("language"), // Doesn't match language of text or content
+                    yyyy_mm_dd,
                 };
-
-                for (let genre of genres) {
-                    let g = genreSet[genre];
-                    if (g === undefined) {
-                        g = [];
-                        genreSet[genre] = g;
-                    }
-                    g.push(result);
-                }
-
-                let c = channels[result.channel];
-                if (c === undefined) {
-                    c = [];
-                    channels[result.channel] = c;
-                }
-                c.push(result);
 
                 return result;
             });
             
-            feeds.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }) );
+            // items.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }) );
 
-            let result = { title, feeds, genres: genreSet, channels };
+            let result = {
+                version : "https://jsonfeed.org/version/1",
+                title,
+                items
+            };
+
             console.log(result);
             return result;
         }
 
-        function feedToHTML(feed) {
+        function itemToHTML(feed) {
             let e = document.createElement("div");
             e.classList.add("item");
 
@@ -124,27 +211,15 @@
             <div class="content">
             <p class="description"></p>
             <div class="details">
-            <span class="genres"></span>
-            <span class="duration"></span> mins
+            <span class="duration"></span>
             </div>
-            <a class="html">HTML</a>
-            <a class="rss">RSS</a>
             </div>
             `;
 
-            // Add channel to genres for display
-            let shortChannel = feed.channel; // TODO - remove BBC prefix maybe?
-            let genres = [shortChannel, ...feed.genres].join(", ");
-
             e.querySelector(".image").src = feed.image;
             e.querySelector(".title").innerText = feed.title;
-            e.querySelector(".description").innerText = feed.description;
-            e.querySelector(".genres").innerText = genres;
-            e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
-            e.querySelector(".html").href = feed.html;
-            e.querySelector(".html").innerText = `HTML for ${feed.title}`;
-            e.querySelector(".rss").href = feed.rss;
-            e.querySelector(".rss").innerText = `RSS for ${feed.title}`;
+            e.querySelector(".description").innerText = feed.summary;
+            e.querySelector(".duration").innerText = feed.attachments[0].duration_in_seconds;
 
             return e;
         }
@@ -158,11 +233,11 @@
         }
 
         function init() {
-            getFeeds().then(result => {
+            getFeed().then(result => {
                 document.title = result.title;
                 let h1 = document.createElement("h1");
                 h1.innerText = result.title;
-                document.body.append(h1, ...result.feeds.map(feedToHTML));
+                document.body.append(h1, ...result.items.map(itemToHTML));
                 console.log("Done");
             });
         }
