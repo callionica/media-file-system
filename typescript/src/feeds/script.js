@@ -295,6 +295,13 @@ function getPID() {
 	if (!pid.endsWith("/")) {
 		pid = pid + "/";
 	}
+
+	let params = new URLSearchParams(document.location.search);
+	let storageKey = params.get('s');
+	if (storageKey) {
+		pid = pid + storageKey.toLowerCase() + "/";
+	}
+
 	return pid;
 }
 

@@ -7,15 +7,62 @@
 	<script src="script.js"></script>
 	<script id="pg">
 		let pageGenerated = false;
-		let data = {
-			title: "A Midsummer Night's Dream",
-			description: "About the show",
-			image: "../../../TV/A%20Midsummer%20Nights%20Dream/A%20Midsummer%20Nights%20Dream.jpg",
-			media: "../../../TV/A%20Midsummer%20Nights%20Dream/A%20Midsummer%20Nights%20Dream.ts",
-		};
+let data = {
+  "version": "https://jsonfeed.org/version/1",
+  "author": "BBC Radio 4",
+  "title": "Grounded with Louis Theroux",
+  "description": "Stuck at home, Louis is using the lockdown to track down some high-profile people he's been longing to talk to - from all walks of life and on both sides of the Atlantic.",
+  "icon": "http://ichef.bbci.co.uk/images/ic/300x300/p089sdxz.jpg",
+  "home_page_url": "http://www.bbc.co.uk/programmes/p089sfrz",
+  "items": [
+    {
+      "id": "urn:bbc:podcast:m000jmp5",
+      "author": {
+        "name": "BBC Radio 4"
+      },
+      "title": "5. Rose McGowan",
+      "summary": "Louis speaks to actor, musician and activist Rose McGowan, who is in lockdown in Mexico.",
+      "url": "http://www.bbc.co.uk/programmes/m000jmp5",
+      "content_text": "In Grounded with Louis Theroux, Louis’s using the lockdown to track down some high-profile people he’s been longing to talk to – a fascinating mix of the celebrated, the controversial and the mysterious.\n \nThis week, Louis speaks to actor, musician and activist Rose McGowan, who is spending lockdown in Mexico. They discuss the mysterious powers of dogs, growing up in a cult and taking on Harvey Weinstein.\n \nProduced by Paul Kobrak\nA Mindhouse production for BBC Radio 4",
+      "date_published": "2020-05-25T04:00:00.000Z",
+      "attachments": [
+        {
+          "url": "https://open.live.bbc.co.uk/mediaselector/6/redir/version/2.0/mediaset/audio-nondrm-download/proto/https/vpid/p08dwm8j.mp3",
+          "size_in_bytes": 60624000,
+          "mime_type": "audio/mpeg",
+          "duration_in_seconds": 3789,
+          "title": "Grounded with Louis Theroux - 2020-05-25 5. Rose McGowan"
+        }
+      ],
+      "sortTitle": "5. Rose McGowan",
+      "yyyy_mm_dd": "2020-05-25"
+    }
+  ]
+};
 	</script>
 	<script>
 		function generatePage() {
+
+			let image = document.querySelector(".backdrop-image");
+			let video = document.querySelector("video");
+			let itemTitle = document.querySelector(".episode_name");
+			let channelTitle = document.querySelector(".show");
+			let itemDescription = document.querySelector(".synopsis");
+
+			let item = data.items[0];
+			let attachment = item.attachments[0];
+
+			document.title = attachment.title || item.title;
+
+			let imageURL = item.image || data.icon;
+			image.src = imageURL;
+			video.poster = imageURL;
+
+			itemTitle.innerText = item.title;
+			channelTitle.innerText = data.title;
+			itemDescription.innerText = item.summary;
+
+			video.src = attachment.url;
 
 			pageGenerated = true;
 			let script = document.querySelector("#pg");
@@ -44,8 +91,8 @@ let data = ${JSON.stringify(data, null, 2)};
 					let key = "play:" + storageKey.toLocaleLowerCase();
 					let storedObject = localStorage.getItem(key);
 					if (storedObject != undefined) {
-						let item = JSON.parse(storedObject);
-						data = item;
+						let minifeed = JSON.parse(storedObject);
+						data = minifeed;
 					}
 				}
 
@@ -60,10 +107,10 @@ let data = ${JSON.stringify(data, null, 2)};
 <body data-page="item" data-playing="false">
 
 	<div class="backdrop">
-		<img class="backdrop-image" src="${image}">
+		<img class="backdrop-image" src="">
 		<div class="backdrop-gradient"></div>
-		<video class="backdrop-video" controls poster="${image}">
-			<source src="${media}" type="video/mp2t">
+		<video class="backdrop-video" controls poster="">
+			<source src="" type="video/mp2t">
 		</video>
 
 	</div>
@@ -71,12 +118,12 @@ let data = ${JSON.stringify(data, null, 2)};
 	<div class="overlay">
 		<div class="sized-content">
 			<div id="play" class="play" onclick="togglePlay()">▶</div>
-			<h1 class="episode_name">${title}</h1>
+			<h1 class="episode_name"></h1>
 			<h2><span class="show"></span> <span class="locator"></span></h2>
 			<p class="elapsed"><span class="currentTime"></span><span class="duration">--:--</span></p>
 		</div>
 		<div class="unsized-content">
-			<p class="synopsis">${description}</p>
+			<p class="synopsis"></p>
 		</div>
 	</div>
 
