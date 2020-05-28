@@ -4,18 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBC Feeds</title>
-    <script>
+    <title>Multiple Feeds</title>
+    <script id="pg">
+        let pageGenerated = false;
         let url = "https://www.bbc.co.uk/podcasts.opml";
-        let params = new URLSearchParams(document.location.search);
-        let storageKey = params.get('s');
-        if (storageKey != undefined) {
-            let key = "feeds:" + storageKey.toLocaleLowerCase();
-            let storedURL = localStorage.getItem(key);
-            if (storedURL != undefined) {
-                url = storedURL;
-            }
-        }
+    </script>
+    <script>
 
         function store(key, data) {
             localStorage.setItem(key, JSON.stringify(data, null, 2));
@@ -24,7 +18,7 @@
         function navigateTo(item) {
             let title = item.title;
             store("feed:" + title, item);
-            document.location = `../feed.html?s=${title}`;
+            document.location = `feed.html?s=${encodeURIComponent(title)}`;
         }
 
         async function load(url) {
@@ -143,10 +137,32 @@
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
             e.querySelector(".html").href = feed.html;
             e.querySelector(".html").innerText = `HTML for ${feed.title}`;
-            e.querySelector(".rss").href = feed.rss;
-            e.querySelector(".rss").innerText = `RSS for ${feed.title}`;
+            
+            let a = e.querySelector(".rss");
+            a.dataset.feed = JSON.stringify(feed, null, 2);
+            a.href = `feed.html?s=${encodeURIComponent(feed.title)}`; //feed.rss;
+            a.innerText = `RSS for ${feed.title}`;
 
             return e;
+        }
+
+        function generatePage() {
+
+            getFeeds().then(result => {
+                document.title = result.title;
+                let h1 = document.createElement("h1");
+                h1.innerText = result.title;
+                document.body.append(h1, ...result.feeds.map(feedToHTML));
+
+                pageGenerated = true;
+                let script = document.querySelector("#pg");
+                script.text = `
+let pageGenerated = true;
+let url = ${JSON.stringify(url)};
+                `;
+
+                console.log("Done");
+            });
         }
 
         function ready(callback) {
@@ -158,13 +174,27 @@
         }
 
         function init() {
-            getFeeds().then(result => {
-                document.title = result.title;
-                let h1 = document.createElement("h1");
-                h1.innerText = result.title;
-                document.body.append(h1, ...result.feeds.map(feedToHTML));
-                console.log("Done");
-            });
+            document.onclick = (event) => {
+                if (event.srcElement.tagName == "A") {
+                    let feed = JSON.parse(event.srcElement.dataset.feed);
+                    store("feed:" + feed.title.toLowerCase(), feed);
+                    console.log("click store");
+                }
+            };
+
+            if (!pageGenerated) {
+                let params = new URLSearchParams(document.location.search);
+                let storageKey = params.get('s');
+                if (storageKey != undefined) {
+                    let key = "feeds:" + storageKey.toLocaleLowerCase();
+                    let storedURL = localStorage.getItem(key);
+                    if (storedURL != undefined) {
+                        url = storedURL;
+                    }
+                }
+
+                generatePage();
+            }
         }
 
         ready(init);
