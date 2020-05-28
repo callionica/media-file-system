@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>A Midsummer Nights Dream</title>
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<script src="script.js"></script>
+	<script id="pg">
+		let pageGenerated = false;
+		let data = {
+			title: "A Midsummer Night's Dream",
+			description: "About the show",
+			image: "../../../TV/A%20Midsummer%20Nights%20Dream/A%20Midsummer%20Nights%20Dream.jpg",
+			media: "../../../TV/A%20Midsummer%20Nights%20Dream/A%20Midsummer%20Nights%20Dream.ts",
+		};
+	</script>
+	<script>
+		function generatePage() {
+
+			pageGenerated = true;
+			let script = document.querySelector("#pg");
+			script.text = `
+let pageGenerated = true;
+let data = ${JSON.stringify(data, null, 2)};
+`;
+
+			console.log("Done");
+		}
+
+		function ready(callback) {
+			if (document.readyState != "loading") {
+				callback();
+			} else if (document.addEventListener) {
+				document.addEventListener('DOMContentLoaded', callback);
+			}
+		}
+
+		function init() {
+
+			if (!pageGenerated) {
+				let params = new URLSearchParams(document.location.search);
+				let storageKey = params.get('s');
+				if (storageKey != undefined) {
+					let key = "play:" + storageKey.toLocaleLowerCase();
+					let storedObject = localStorage.getItem(key);
+					if (storedObject != undefined) {
+						let item = JSON.parse(storedObject);
+						data = item;
+					}
+				}
+
+				generatePage();
+			}
+		}
+
+		ready(init);
+	</script>
+</head>
+
+<body data-page="item" data-playing="false">
+
+	<div class="backdrop">
+		<img class="backdrop-image" src="${image}">
+		<div class="backdrop-gradient"></div>
+		<video class="backdrop-video" controls poster="${image}">
+			<source src="${media}" type="video/mp2t">
+		</video>
+
+	</div>
+
+	<div class="overlay">
+		<div class="sized-content">
+			<div id="play" class="play" onclick="togglePlay()">▶</div>
+			<h1 class="episode_name">${title}</h1>
+			<h2><span class="show"></span> <span class="locator"></span></h2>
+			<p class="elapsed"><span class="currentTime"></span><span class="duration">--:--</span></p>
+		</div>
+		<div class="unsized-content">
+			<p class="synopsis">${description}</p>
+		</div>
+	</div>
+
+	<body>
+
+</html>

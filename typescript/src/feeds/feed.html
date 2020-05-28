@@ -18,7 +18,7 @@
         function navigateTo(item) {
             let title = item.title;
             store("play:" + title, item);
-            document.location = `../play.html?s=${encodeURIComponent(title)}`;
+            document.location = `play.html?s=${encodeURIComponent(title)}`;
         }
 
         async function load(url) {
@@ -226,6 +226,7 @@
             <div class="details">
             <span class="duration"></span>
             </div>
+            <a class="rss">RSS</a>
             </div>
             `;
 
@@ -233,6 +234,11 @@
             e.querySelector(".title").innerText = item.title;
             e.querySelector(".description").innerText = item.summary || item.content_text;
             e.querySelector(".duration").innerText = item.attachments[0].duration_in_seconds;
+
+            let a = e.querySelector(".rss");
+            a.dataset.item = JSON.stringify(item, null, 2);
+            a.href = `play.html?s=${encodeURIComponent(item.title)}`;
+            a.innerText = `Player for ${item.title}`;
 
             return e;
         }
@@ -264,6 +270,14 @@
         }
 
         function init() {
+
+            document.onclick = (event) => {
+                if (event.srcElement.tagName == "A") {
+                    let item = JSON.parse(event.srcElement.dataset.item);
+                    store("play:" + item.title.toLowerCase(), item);
+                    console.log("click store");
+                }
+            };
 
             if (!pageGenerated) {
                 let params = new URLSearchParams(document.location.search);

@@ -1,0 +1,494 @@
+::cue(.white) {
+    color: whitesmoke;
+}
+
+::cue(.lime) {
+    color: lime;
+}
+
+::cue(.green) {
+    color: lime;
+}
+
+::cue(.cyan) {
+    color: #0ff;
+}
+
+::cue(.red) {
+    color: red;
+}
+
+::cue(.yellow) {
+    color: #ff0;
+}
+
+::cue(.magenta) {
+    color: magenta;
+}
+
+::cue(.blue) {
+    color: #00f;
+}
+
+::cue(.black) {
+    color: black;
+}
+
+::cue(.color008000) {
+    color: green;
+}
+
+::cue(.bg_white) {
+    background-color: whitesmoke;
+}
+
+::cue(.bg_lime) {
+    background-color: lime;
+}
+
+::cue(.bg_green) {
+    background-color: lime;
+}
+
+::cue(.bg_cyan) {
+    background-color: cyan;
+}
+
+::cue(.bg_red) {
+    background-color: red;
+}
+
+::cue(.bg_yellow) {
+    background-color: yellow;
+}
+
+::cue(.bg_magenta) {
+    background-color: magenta;
+}
+
+::cue(.bg_blue) {
+    background-color: blue;
+}
+
+::cue(.bg_black) {
+    background-color: black;
+}
+
+::cue(.background-red) {
+    background-color: red;
+}
+
+::cue(.background-green) {
+    background-color: lime;
+}
+
+::cue(.background-blue) {
+    background-color: #00f;
+}
+
+::cue(.background-yellow) {
+    background-color: #ff0;
+}
+
+::cue(.background-cyan) {
+    background-color: #0ff;
+}
+
+::cue(.background-color008000) {
+    background-color: green;
+}
+
+html {
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body[data-page='group'] {
+    --sidebar-width: 25vw;
+}
+
+#sidebar {
+    position: fixed;
+    float: left;
+    width: var(--sidebar-width, 20vw);
+    padding-right: 3vw;
+    padding-top: 1vw;
+}
+
+#sidebar img {
+    width: 100%;
+}
+
+#content {
+    margin-left: var(--sidebar-width, 20vw);
+}
+
+.season {
+    display: var(--display-season, inline-block);
+    width: 5vw;
+}
+.episode {
+    display: var(--display-season, inline-block);
+    width: 6vw;
+}
+.synopsis {
+	display: block;
+}
+.latest::after { content: " ←"; }
+
+:root {
+    --background-color-rgb: 12, 16, 28;
+    --background-color: rgba(var(--background-color-rgb), 1);
+
+    --color-rgb: 245, 245, 245;
+    --color: rgba(var(--color-rgb), 1);
+
+    --gray1_: 225;
+    --gray1-rgb: var(--gray1_), var(--gray1_), var(--gray1_);
+    --gray1: rgba(var(--gray1-rgb), 1);
+
+    --gray2_: 200;
+    --gray2-rgb: var(--gray2_), var(--gray2_), var(--gray2_);
+    --gray2: rgba(var(--gray2-rgb), 1);
+
+    --play-button-background-color: rgba(12, 16, 68, 0.8);
+    --action-color: aqua;
+    --focus-color: yellow;
+}
+
+* {
+    border:  0px;
+    margin:  0px;
+    padding: 0px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+a:focus {
+    color: var(--focus-color);
+}
+
+img {
+    object-fit: contain;
+}
+
+body {
+    color: var(--color);
+    background-color: var(--background-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 3vw;
+}
+
+video {
+    background-color: var(--background-color);
+    max-height: 100vh;
+    max-width: 100vw;
+}
+
+.backdrop {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    max-height: 56.25vw;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.backdrop-image {
+    z-index: 1;
+    pointer-events: none;
+    width: 100%;
+    max-height: 100vh;
+}
+
+.backdrop-gradient {
+    pointer-events: none;
+    background: linear-gradient(to bottom,
+            rgba(var(--background-color-rgb), 0.0) 0%,
+            rgba(var(--background-color-rgb), 0.0) 50%,
+            rgba(var(--background-color-rgb), 0.6) 70%,
+            rgba(var(--background-color-rgb), 1.0) 100%),
+            /*linear-gradient(to right,
+            rgba(var(--background-color-rgb), 1.0) 0%,
+            rgba(var(--background-color-rgb), 0.95) 6%,
+            rgba(var(--background-color-rgb), 0.7) 8%,
+            rgba(var(--background-color-rgb), 0.0) 10%,
+            rgba(var(--background-color-rgb), 0.0) 90%,
+            rgba(var(--background-color-rgb), 0.7) 92%,
+            rgba(var(--background-color-rgb), 0.95) 94%,
+            rgba(var(--background-color-rgb), 1.0) 100%)*/
+    ;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+.backdrop-video {
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+body[data-playing="true"] .backdrop-video {
+    pointer-events: initial;
+    opacity: 1;
+    transition: opacity 0.6s ease;
+}
+
+.overlay {
+    position: relative;
+    transform: translateY(-100%);
+    transition: transform 0.6s ease;
+    background: linear-gradient(to bottom,
+        rgba(var(--background-color-rgb), 0.0) 0%,
+        rgba(var(--background-color-rgb), 0.2) 20%,
+        rgba(var(--background-color-rgb), 0.6) 70%,
+        rgba(var(--background-color-rgb), 1.0) 100%);
+}
+
+body[data-playing="true"] .overlay {
+    transform: translateY(0%);
+    transition: transform 0.6s ease;
+}
+
+.sized-content {
+    padding-top: 3vw;
+    padding-bottom: 3vw;
+    padding-left: 5vw;
+    padding-right: 5vw;
+}
+
+.unsized-content {
+    position: absolute;
+    width: 100vw;
+    padding-top: 0vw;
+    padding-bottom: 0vw;
+    padding-left: 5vw;
+    padding-right: 5vw;
+}
+
+h1 {
+    font-size: 6vw;
+}
+
+h2 {
+    font-size: 4vw;
+    margin-bottom: 2vw;
+}
+
+.play {
+    position: absolute;
+    /*transform: translateY(-13vw);*/
+    top: 3vw;
+    left: 85vw;
+    width: 10vw;
+    height: 10vw;
+
+    line-height: 10vw;
+    text-align: center;
+    font-size: 6vw;
+
+    border-radius: 1vw;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+
+    opacity: 0.5;
+    background-color: rgba(var(--background-color-rgb), 0.3);
+    transition: opacity 0.6s ease, background-color 0.6s ease;
+}
+
+.play:hover {
+    opacity: 1.0;
+    background-color: var(--play-button-background-color);
+    transition: opacity 0.2s ease, background-color 0.6s ease;
+}
+
+body[data-playing="true"] .play {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    transition-delay: 0.8s;
+}
+
+.show {
+    color: var(--gray1);
+    opacity: 0.95;
+}
+
+.locator {
+    color: var(--gray2);
+    text-transform: lowercase;
+    font-variant: small-caps;
+}
+
+.elapsed {
+    color: var(--gray2);
+    text-transform: lowercase;
+    font-variant: small-caps;
+    margin-top: 2vw;
+}
+
+.currentTime {
+    display: inline-block;
+    min-width: 10vw;
+}
+
+.duration {
+    display: inline-block;
+    margin-left: 3vw;
+}
+
+.duration:before {
+    content: 'Duration: ';
+}
+
+.action {
+    color: var(--action-color);
+    text-transform: lowercase;
+    font-variant: small-caps;
+}
+
+.this-next-episode::after {
+    content: "Next episode";
+}
+
+body[data-playing="true"] .this-next-episode::after {
+    content: "This episode";
+}
+
+#go-next {
+    display: none;
+}
+
+body[data-playing="true"] #go-next {
+    display: block;
+}
+
+.unsized-content p {
+    margin-bottom: 2vw;
+}
+
+.unsized-content li {
+    list-style: none;
+    display: flexbox;
+    display: -webkit-box;
+    flex-direction: row;
+    align-items: stretch;
+    align-content: stretch;
+    margin-bottom: 3vw;
+    overflow: hidden;
+}
+
+li {
+    position: relative;
+}
+
+li>* {
+    display: flex;
+    display: -webkit-flex;
+}
+
+.unsized-content img {
+    width: 22vw;
+    height: 100%;
+    max-height: 19vw;
+    min-height: 12vw;
+    margin-right: 3vw;
+}
+
+.details {
+    display: block;
+    width: 65vw;
+    min-height: 12vw;
+    font-size: 2.5vw;
+}
+
+.details h1 {
+    font-size: 4vw;
+    margin-bottom: 0.5vw;
+}
+
+.details h2 {
+    font-size: 3vw;
+    margin-bottom: 1vw;
+}
+
+.details p {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+    color: var(--gray2);
+}
+
+.season {
+    padding-right: 1vw;
+}
+.season:not(:empty)::before {
+    content: "S";
+    color: var(--gray2);
+}
+
+.episode {
+    padding-right: 1vw;
+}
+/* If there's an episode, prefix it with E...*/
+.episode:not(:empty)::before {
+    content: "E";
+    color: var(--gray2);
+}
+/* ...unless we're not showing the season, in which case the number is sufficient */
+body[data-hide-season] .episode::before {
+    content: "";
+}
+
+body[data-page='group'] {
+    padding: 3vw;
+}
+
+body[data-page='groups'] {
+    padding: 3vw;
+}
+
+body[data-page='group'] #content {
+    display: table;
+}
+
+body[data-page='group'] #content a {
+    display: table-row;
+}
+
+body[data-page='group'] #content .season {
+    display: table-cell;
+    width: auto;
+}
+
+body[data-page='group'][data-hide-season] #content .season {
+    display: none;
+}
+
+body[data-page='group'] #content .episode {
+    display: table-cell;
+    width: auto;
+}
+
+body[data-page='group'] #content .name {
+    display: table-cell;
+}
