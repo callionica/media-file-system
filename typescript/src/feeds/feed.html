@@ -235,8 +235,13 @@
             e.querySelector(".description").innerText = item.summary || item.content_text;
             e.querySelector(".duration").innerText = item.attachments[0].duration_in_seconds;
 
+            let minifeed = {
+                ...channel,
+                items: [item],
+            };
+
             let a = e.querySelector(".rss");
-            a.dataset.item = JSON.stringify(item, null, 2);
+            a.dataset.item = JSON.stringify(minifeed, null, 2);
             a.href = `play.html?s=${encodeURIComponent(item.title)}`;
             a.innerText = `Player for ${item.title}`;
 
@@ -273,8 +278,8 @@
 
             document.onclick = (event) => {
                 if (event.srcElement.tagName == "A") {
-                    let item = JSON.parse(event.srcElement.dataset.item);
-                    store("play:" + item.title.toLowerCase(), item);
+                    let minifeed = JSON.parse(event.srcElement.dataset.item);
+                    store("play:" + minifeed.items[0].title.toLowerCase(), minifeed);
                     console.log("click store");
                 }
             };
