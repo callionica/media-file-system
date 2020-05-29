@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A Single Feed</title>
+    <script src="human.js"></script>
     <script id="pg">
         let pageGenerated = false;
         let url = "http://podcasts.files.bbci.co.uk/m000hmmf.rss";
     </script>
     <script>
+        let human = new Human();
 
         function store(key, data) {
             localStorage.setItem(key, JSON.stringify(data, null, 2));
@@ -224,6 +226,7 @@
             <div class="content">
             <p class="description"></p>
             <div class="details">
+            <span class="date"></span>
             <span class="duration"></span>
             </div>
             <a class="rss">RSS</a>
@@ -233,7 +236,8 @@
             e.querySelector(".image").src = item.image || channel.icon;
             e.querySelector(".title").innerText = item.title;
             e.querySelector(".description").innerText = item.summary || item.content_text;
-            e.querySelector(".duration").innerText = item.attachments[0].duration_in_seconds;
+            e.querySelector(".date").innerText = human.formatDate(item.date_published);
+            e.querySelector(".duration").innerText = human.formatSeconds(item.attachments[0].duration_in_seconds);
 
             let minifeed = {
                 ...channel,
