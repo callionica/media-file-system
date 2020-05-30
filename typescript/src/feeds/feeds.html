@@ -74,7 +74,7 @@
                     title,
                     sortTitle,
                     description: o.getAttribute("description").trim(),
-                    rss: o.getAttribute("xmlUrl"),
+                    feed_url: o.getAttribute("xmlUrl"),
                     html: o.getAttribute("htmlUrl"),
                     image: o.getAttribute("imageHref"),
                     genres,
@@ -140,7 +140,7 @@
             
             let a = e.querySelector(".rss");
             a.dataset.feed = JSON.stringify(feed, null, 2);
-            a.href = `feed.html?s=${encodeURIComponent(feed.title)}`; //feed.rss;
+            a.href = `feed.html?s=${encodeURIComponent(feed.title)}`;
             a.innerText = `RSS for ${feed.title}`;
 
             return e;
