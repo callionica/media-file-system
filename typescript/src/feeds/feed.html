@@ -256,11 +256,15 @@
         }
 
         function generatePage() {
+            document.title = feed.title;
+            let h1 = document.getElementById("title");
+            h1.innerText = feed.title;
+
             getFeed(feed.feed_url).then(result => {
                     document.title = result.title;
-                    let h1 = document.createElement("h1");
+                    let h1 = document.getElementById("title");
                     h1.innerText = result.title;
-                    document.body.append(h1, ...result.items.map(item => itemToHTML(result, item)));
+                    document.body.append(...result.items.map(item => itemToHTML(result, item)));
 
                     pageGenerated = true;
                     let script = document.querySelector("#pg");
@@ -499,7 +503,7 @@
 </head>
 
 <body>
-
+<h1 id="title"></h1>
 </body>
 
 </html>

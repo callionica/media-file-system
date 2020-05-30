@@ -69,14 +69,16 @@
                 
                 let title = o.getAttribute("text").trim();
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
+
                 let result = {
-                    channel: o.parentNode.getAttribute("text").trim(),
                     title,
-                    sortTitle,
                     description: o.getAttribute("description").trim(),
                     feed_url: o.getAttribute("xmlUrl"),
-                    html: o.getAttribute("htmlUrl"),
-                    image: o.getAttribute("imageHref"),
+                    home_page_url: o.getAttribute("htmlUrl"),
+                    icon: o.getAttribute("imageHref"),
+
+                    sortTitle,
+                    channel: o.parentNode.getAttribute("text").trim(),
                     genres,
                     typicalDurationMinutes: parseInt(o.getAttribute("typicalDurationMins"), 10) || undefined,
                     // language: o.getAttribute("language"), // Doesn't match language of text or content
@@ -130,12 +132,12 @@
             let shortChannel = feed.channel; // TODO - remove BBC prefix maybe?
             let genres = [shortChannel, ...feed.genres].join(", ");
 
-            e.querySelector(".image").src = feed.image;
+            e.querySelector(".image").src = feed.icon;
             e.querySelector(".title").innerText = feed.title;
             e.querySelector(".description").innerText = feed.description;
             e.querySelector(".genres").innerText = genres;
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
-            e.querySelector(".html").href = feed.html;
+            e.querySelector(".html").href = feed.home_page_url;
             e.querySelector(".html").innerText = `HTML for ${feed.title}`;
             
             let a = e.querySelector(".rss");
