@@ -104,12 +104,6 @@
             localStorage.setItem(key, JSON.stringify(data, null, 2));
         }
 
-        /*function navigateTo(item) {
-            let title = item.title;
-            store("feed:" + title, item);
-            document.location = `feed.html?s=${encodeURIComponent(title)}`;
-        }*/
-
         async function load(url) {
             async function parseXml(text) {
                 return await (new window.DOMParser()).parseFromString(text, "text/xml");

@@ -16,6 +16,89 @@
     <script>
         let human = new Human();
 
+        let selected = 0;
+
+        function select(index) {
+            if (index < 0) {
+                index = feed.items.length - 1;
+            } else if (index > feed.items.length - 1) {
+                index = 0;
+            }
+
+            let previous = selected;
+            selected = index;
+
+            let items = [...document.querySelectorAll(".item")];
+
+            let previousItem = items[previous];
+            previousItem.removeAttribute("data-selected");
+
+            let selectedItem = items[selected];
+            selectedItem.setAttribute("data-selected", "true");
+
+            selectedItem.focus();
+            selectedItem.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "start",
+            });
+        }
+
+        function activate() {
+            let items = [...document.querySelectorAll(".item")];
+            let selectedItem = items[selected];
+            let a = selectedItem && selectedItem.querySelector("a");
+            if (a) {
+                a.click();
+            }
+        }
+
+        function onkeydown(evt) {
+            evt = evt || window.event;
+            var handled = false;
+
+            if (evt.key === "ArrowDown") {
+                if (!evt.getModifierState("Meta")) {
+                    select(selected + 1);
+                } else {
+                    select(feed.items.length - 1);
+                }
+                handled = true;
+            } else if (evt.key === "ArrowUp") {
+                if (!evt.getModifierState("Meta")) {
+                    select(selected - 1);
+                } else {
+                    select(0);
+                }
+                handled = true;
+            } else if (evt.key === "Backspace") {
+                window.history.back();
+                handled = true;
+            } else if (evt.keyCode == 32 || evt.key === "Enter") { // SPACE
+                activate();
+                handled = true;
+            }
+
+            /*if (searchConsumesSpace) {
+                handled = true;
+                addToSearch(" ");
+            }
+            // Click on the currently active element
+            else {
+                activate();
+                handled = true;
+            }
+        } else if ((!evt.getModifierState("Meta") && !evt.getModifierState("Control")) && (((65 <= evt.keyCode) && (evt.keyCode < 65 + 26)) || ((48 <= evt.keyCode) && (evt.keyCode < 48 + 10)))) {
+            var letter = String.fromCharCode(evt.keyCode); // works in this range
+            addToSearch(letter);
+        }*/
+
+            if (handled) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
+        }
+
         function store(key, data) {
             localStorage.setItem(key, JSON.stringify(data, null, 2));
         }
@@ -261,20 +344,25 @@
             h1.innerText = feed.title;
 
             getFeed(feed.feed_url).then(result => {
-                    document.title = result.title;
-                    let h1 = document.getElementById("title");
-                    h1.innerText = result.title;
-                    document.body.append(...result.items.map(item => itemToHTML(result, item)));
+                feed = result;
+                
+                document.title = result.title;
+                let h1 = document.getElementById("title");
+                h1.innerText = result.title;
+                document.body.append(...result.items.map(item => itemToHTML(result, item)));
+                select(0);
 
-                    pageGenerated = true;
-                    let script = document.querySelector("#pg");
-                    script.text = `
+                document.onkeydown = onkeydown;
+
+                pageGenerated = true;
+                let script = document.querySelector("#pg");
+                script.text = `
     let pageGenerated = true;
     let feed = ${JSON.stringify(feed)};
                     `;
 
-                    console.log("Done");
-                });
+                console.log("Done");
+            });
         }
 
         function ready(callback) {
@@ -503,7 +591,7 @@
 </head>
 
 <body>
-<h1 id="title"></h1>
+    <h1 id="title"></h1>
 </body>
 
 </html>
