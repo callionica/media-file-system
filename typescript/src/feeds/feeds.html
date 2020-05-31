@@ -45,6 +45,15 @@
             });
         }
 
+        function activate() {
+            let items = [...document.querySelectorAll(".item")];
+            let selectedItem = items[selected];
+            let a = selectedItem && selectedItem.querySelector("a");
+            if (a) {
+                a.click();
+            }
+        }
+
         function onkeydown(evt) {
             evt = evt || window.event;
             var handled = false;
@@ -66,8 +75,12 @@
             } else if (evt.key === "Backspace") {
                 window.history.back();
                 handled = true;
-            } /*else if (evt.keyCode == 32 || evt.key === "Enter") { // SPACE
-            if (searchConsumesSpace) {
+            } else if (evt.keyCode == 32 || evt.key === "Enter") { // SPACE
+                activate();
+                handled = true;
+            }
+
+            /*if (searchConsumesSpace) {
                 handled = true;
                 addToSearch(" ");
             }
@@ -91,11 +104,11 @@
             localStorage.setItem(key, JSON.stringify(data, null, 2));
         }
 
-        function navigateTo(item) {
+        /*function navigateTo(item) {
             let title = item.title;
             store("feed:" + title, item);
             document.location = `feed.html?s=${encodeURIComponent(title)}`;
-        }
+        }*/
 
         async function load(url) {
             async function parseXml(text) {
