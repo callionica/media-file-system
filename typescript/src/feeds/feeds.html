@@ -45,28 +45,28 @@
             });
         }
 
-    function onkeydown(evt) {
-        evt = evt || window.event;
-        var handled = false;
+        function onkeydown(evt) {
+            evt = evt || window.event;
+            var handled = false;
 
-        if (evt.key === "ArrowDown") {
-            if (!evt.getModifierState("Meta")) {
-                select(selected + 1);
-            } else {
-                select(feed.items.length - 1);
-            }
-            handled = true;
-        } else if (evt.key === "ArrowUp") {
-            if (!evt.getModifierState("Meta")) {
-                select(selected - 1);
-            } else {
-                select(0);
-            }
-            handled = true;
-        } else if (evt.key === "Backspace") {
-            window.history.back();
-            handled = true;
-        } /*else if (evt.keyCode == 32 || evt.key === "Enter") { // SPACE
+            if (evt.key === "ArrowDown") {
+                if (!evt.getModifierState("Meta")) {
+                    select(selected + 1);
+                } else {
+                    select(feed.items.length - 1);
+                }
+                handled = true;
+            } else if (evt.key === "ArrowUp") {
+                if (!evt.getModifierState("Meta")) {
+                    select(selected - 1);
+                } else {
+                    select(0);
+                }
+                handled = true;
+            } else if (evt.key === "Backspace") {
+                window.history.back();
+                handled = true;
+            } /*else if (evt.keyCode == 32 || evt.key === "Enter") { // SPACE
             if (searchConsumesSpace) {
                 handled = true;
                 addToSearch(" ");
@@ -81,11 +81,11 @@
             addToSearch(letter);
         }*/
 
-        if (handled) {
-            evt.stopPropagation();
-            evt.preventDefault();
+            if (handled) {
+                evt.stopPropagation();
+                evt.preventDefault();
+            }
         }
-    }
 
         function store(key, data) {
             localStorage.setItem(key, JSON.stringify(data, null, 2));
@@ -142,7 +142,7 @@
             console.log(results);
             let feeds = results.map(o => {
                 let genres = o.getAttribute("bbcgenres").split(",").map(g => g.trim()).filter(g => g);
-                
+
                 let title = o.getAttribute("text").trim();
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
 
@@ -178,8 +178,8 @@
 
                 return result;
             });
-            
-            feeds.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }) );
+
+            feeds.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, undefined, { numeric: true, ignorePunctuation: true, sensitivity: "base" }));
 
             let result = { title, feed_url: url, items: feeds, genres: genreSet, channels };
             console.log(result);
@@ -215,7 +215,7 @@
             e.querySelector(".duration").innerText = human.formatSeconds(feed.typicalDurationMinutes * 60) || "";
             // e.querySelector(".html").href = feed.home_page_url;
             // e.querySelector(".html").innerText = `HTML for ${feed.title}`;
-            
+
             let a = e.querySelector(".rss");
             a.dataset.feed = JSON.stringify(feed, null, 2);
             a.href = `feed.html?s=${encodeURIComponent(feed.title)}`;
@@ -241,7 +241,7 @@
                 let script = document.querySelector("#pg");
                 script.text = `
 let pageGenerated = true;
-let feed = ${JSON.stringify({title, feed_url, items} = result)};
+let feed = ${JSON.stringify({ title, feed_url, items } = result)};
                 `;
 
                 console.log("Done");
@@ -284,108 +284,112 @@ let feed = ${JSON.stringify({title, feed_url, items} = result)};
 
     </script>
     <style>
-		html {
-			box-sizing: border-box;
-		}
+        html {
+            box-sizing: border-box;
+        }
 
-		*, *:before, *:after {
-			box-sizing: inherit;
-		}
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
 
-		* {
-			margin: 0;
-			padding: 0;
-		}
+        * {
+            margin: 0;
+            padding: 0;
+        }
 
-		body {
-			--paper: rgb(249, 248, 245);
-			--ink: hsl(214, 97%, 23%);
-			--ink-2: hsl(214, 90%, 22%);
-			--ink-3: silver;
+        body {
+            --paper: rgb(249, 248, 245);
+            --ink: hsl(214, 97%, 23%);
+            --ink-2: hsl(214, 90%, 22%);
+            --ink-3: silver;
 
-			--blue: rgb(108, 115, 222);
-			--brown: rgb(118, 108,  29);
+            --blue: rgb(108, 115, 222);
+            --brown: rgb(118, 108, 29);
 
-			--font-size: 3vw;
-			--line-height: 1.2;
-			--margin: 2vw;
+            --font-size: 3vw;
+            --line-height: 1.2;
+            --margin: 2vw;
 
-			--line: calc(var(--line-height) * var(--font-size));
-			--five-lines: calc(5 * var(--line));
-			--six-lines: calc(6 * var(--line));
-			--image-height: var(--six-lines);
-			--image-width: var(--image-height);
-			--area-width: calc(98vw - (5 * var(--margin)));
-			--content-width: calc(var(--area-width) - var(--image-width));
+            --line: calc(var(--line-height) * var(--font-size));
+            --five-lines: calc(5 * var(--line));
+            --six-lines: calc(6 * var(--line));
+            --image-height: var(--six-lines);
+            --image-width: var(--image-height);
+            --area-width: calc(98vw - (5 * var(--margin)));
+            --content-width: calc(var(--area-width) - var(--image-width));
 
-			margin-left: var(--margin);
-			margin-right: var(--margin);
+            margin-left: var(--margin);
+            margin-right: var(--margin);
 
-			font-family: 'Avenir', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-			font-size: 3vw;
-			line-height: 1.2;
-			background-color: var(--paper);
-			color: var(--ink);
-		}
+            font-family: 'Avenir', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-size: 3vw;
+            line-height: 1.2;
+            background-color: var(--paper);
+            color: var(--ink);
+        }
 
-		img {
-			width: var(--image-width);
-			height: var(--image-height);
-			object-fit: contain;
-			vertical-align: top;
-			display: inline-block;
-			/*background-color: black;*/
-		}
+        img {
+            width: var(--image-width);
+            height: var(--image-height);
+            object-fit: contain;
+            vertical-align: top;
+            display: inline-block;
+            /*background-color: black;*/
+        }
 
-		.no-image img {
-			display: none;
-		}
+        .no-image img {
+            display: none;
+        }
 
-		h1 {
-			color: inherit;
-			font-size: 4vw;
-			font-weight: bold;
-			margin-bottom: 2vw;
-		}
+        h1 {
+            color: inherit;
+            font-size: 4vw;
+            font-weight: bold;
+            margin-bottom: 2vw;
+        }
 
-		p {
-			padding: 0;
-			margin: 0;
-			/*margin-bottom: 2vw;*/
-		}
+        p {
+            padding: 0;
+            margin: 0;
+            /*margin-bottom: 2vw;*/
+        }
 
-		.content {
-			/*
+        .content {
+            /*
 			There is space from the top of the text line to the top of the text
 			To align an image with the top of the text (not the line), we make a small
 			adjustment. This adjustment would likely need to change based on the font and line-height.
 			 */
-			--adjustment: 0.3vw;
-			display: inline-block;
-			width: var(--content-width);
-			margin-left: var(--margin);
-			margin-top: calc(-1 * var(--adjustment, 0)); /* Visual adjust to align with image */
-			
-		}
+            --adjustment: 0.3vw;
+            display: inline-block;
+            width: var(--content-width);
+            margin-left: var(--margin);
+            margin-top: calc(-1 * var(--adjustment, 0));
+            /* Visual adjust to align with image */
 
-		.no-image .content {
-			margin-left: 0;
-			margin-right: 0;
-			width: 100%;
-		}
+        }
 
-		.channel h1 {
-			color: var(--brown);
-		}
+        .no-image .content {
+            margin-left: 0;
+            margin-right: 0;
+            width: 100%;
+        }
 
-		.channel .content {
-			margin-left: 0;
-			margin-right: var(--margin);
-		}
+        .channel h1 {
+            color: var(--brown);
+        }
 
-		.details {
-			color: var(--ink-3);
-            padding-top: calc(2 * var(--adjustment, 0)); /* Visual adjust to counter .content's adjustment */
+        .channel .content {
+            margin-left: 0;
+            margin-right: var(--margin);
+        }
+
+        .details {
+            color: var(--ink-3);
+            padding-top: calc(2 * var(--adjustment, 0));
+            /* Visual adjust to counter .content's adjustment */
 
             /* We want the same line height, but a smaller font-size */
             /*--local-font-size: 2.5vw;
@@ -394,42 +398,42 @@ let feed = ${JSON.stringify({title, feed_url, items} = result)};
 
             font-size: 2.5vw;
             line-height: 1.44;
-		}
-
-		.duration:not(:empty)::before {
-			content: ' • ';
-		}
-
-		.description {
-			height: calc(var(--five-lines));
-			overflow: hidden;
-			text-overflow: ellipsis;
-			color: var(--ink-2);
-		}
-
-		.item {
-            position: relative;
-			padding: 2vw;
-			padding-bottom: 3vw;
-		}
-
-		.channel {
-			padding: 2vw;
-			padding-bottom: 3vw;
-		}
-
-		.item[data-selected] {
-			background-color: var(--brown);
-			color: var(--ink);
-			--ink: whitesmoke;
-			--ink-2: hsl(0, 0%, 91%);
-			--ink-3: hsl(0, 0%, 80%);
-		}
-
-		a:focus {
-			outline: none;
         }
-        
+
+        .duration:not(:empty)::before {
+            content: ' • ';
+        }
+
+        .description {
+            height: calc(var(--five-lines));
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--ink-2);
+        }
+
+        .item {
+            position: relative;
+            padding: 2vw;
+            padding-bottom: 3vw;
+        }
+
+        .channel {
+            padding: 2vw;
+            padding-bottom: 3vw;
+        }
+
+        .item[data-selected] {
+            background-color: var(--brown);
+            color: var(--ink);
+            --ink: whitesmoke;
+            --ink-2: hsl(0, 0%, 91%);
+            --ink-3: hsl(0, 0%, 80%);
+        }
+
+        a:focus {
+            outline: none;
+        }
+
         a.html {
             display: none;
         }
@@ -444,29 +448,28 @@ let feed = ${JSON.stringify({title, feed_url, items} = result)};
             opacity: 0;
         }
 
-		.audio {
-			text-decoration: none;
-			color: inherit;
-		}
+        .audio {
+            text-decoration: none;
+            color: inherit;
+        }
 
-		#output {
-			display: none;
-		}
+        #output {
+            display: none;
+        }
 
-		#input {
-			display: none;
-		}
+        #input {
+            display: none;
+        }
 
-		video {
-			position: fixed;
-			width: 96vw;
-			height: 8vw;
-			padding: 0;
-			margin: 0;
-			background-color: var(--paper);
-		}
-
-	</style>
+        video {
+            position: fixed;
+            width: 96vw;
+            height: 8vw;
+            padding: 0;
+            margin: 0;
+            background-color: var(--paper);
+        }
+    </style>
 </head>
 
 <body>
