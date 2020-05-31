@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiple Feeds</title>
+    <script src="human.js"></script>
     <script id="pg">
         let pageGenerated = false;
         let feed = {
@@ -14,6 +15,8 @@
         };
     </script>
     <script>
+        let human = new Human();
+
         let selected = 0;
 
         function select(index) {
@@ -138,7 +141,7 @@
             let results = [...data.querySelectorAll("outline[type='rss']")];
             console.log(results);
             let feeds = results.map(o => {
-                let genres = o.getAttribute("bbcgenres").split(",").map(g => g.trim());
+                let genres = o.getAttribute("bbcgenres").split(",").map(g => g.trim()).filter(g => g);
                 
                 let title = o.getAttribute("text").trim();
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
@@ -194,7 +197,7 @@
             <p class="description"></p>
             <div class="details">
             <span class="genres"></span>
-            <span class="duration"></span> mins
+            <span class="duration"></span>
             </div>
             </div>
             <!--<a class="html">HTML</a>-->
@@ -209,7 +212,7 @@
             e.querySelector(".title").innerText = feed.title;
             e.querySelector(".description").innerText = feed.description;
             e.querySelector(".genres").innerText = genres;
-            e.querySelector(".duration").innerText = feed.typicalDurationMinutes || "";
+            e.querySelector(".duration").innerText = human.formatSeconds(feed.typicalDurationMinutes * 60) || "";
             // e.querySelector(".html").href = feed.home_page_url;
             // e.querySelector(".html").innerText = `HTML for ${feed.title}`;
             
@@ -225,7 +228,7 @@
 
             getFeeds(feed.feed_url).then(result => {
                 feed = result;
-                
+
                 document.title = result.title;
                 let h1 = document.createElement("h1");
                 h1.innerText = result.title;
