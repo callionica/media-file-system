@@ -1,6 +1,7 @@
 "use strict";
-class Player {
+class Player extends Control {
     constructor() {
+        super();
         this.commands = [
             new KeyboardCommand("Player: Play/pause", "Space", command(this, "playPause")),
             new KeyboardCommand("Player: Play/pause", "F8", command(this, "playPause")),

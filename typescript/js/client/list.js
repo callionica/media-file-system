@@ -1,6 +1,7 @@
 "use strict";
-class List {
+class List extends Control {
     constructor() {
+        super();
         this.commands = [
             new KeyboardCommand("List: Back", "Delete", command(this, "back")),
             new KeyboardCommand("List: Forward", "⇧Delete", command(this, "forward")),

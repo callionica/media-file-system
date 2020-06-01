@@ -114,25 +114,39 @@ function getTargets() {
 }
 
 function activeElement() {
-	// The activeElement is one of these:
-	// 1. The focused A link
-	// 2. The latest link
-	// 3. The first A link
-	var targets = getTargets();
-
-	var currentElement = document.activeElement;
-	if (currentElement) {	
-		var index = targets.indexOf(currentElement);
-		if (index >= 0) {
-			return currentElement;
-		}
+	let result;
+	
+	result = document.querySelector(".item[data-selected]");
+	if (result != undefined) {
+		return result;
 	}
 
-	if (latestLink) {
-		return latestLink;
+	result = document.querySelector(".item[data-selected-pending]");
+	if (result != undefined) {
+		return result;
 	}
 
-	return targets[0];
+	return getTargets()[0];
+
+	// // The activeElement is one of these:
+	// // 1. The focused A link
+	// // 2. The latest link
+	// // 3. The first A link
+	// var targets = getTargets();
+
+	// var currentElement = document.activeElement;
+	// if (currentElement) {	
+	// 	var index = targets.indexOf(currentElement);
+	// 	if (index >= 0) {
+	// 		return currentElement;
+	// 	}
+	// }
+
+	// if (latestLink) {
+	// 	return latestLink;
+	// }
+
+	// return targets[0];
 }
 
 function activate() {
@@ -178,11 +192,12 @@ var selectTimeout;
 function moveFocusTo(e) {
 	
 	const attr = "data-selected";
-	let p = document.querySelector(`*[${attr}]`);
-	if (p) {
+	let a = document.querySelectorAll(`*[${attr}]`);
+	for (let p of a) {
 		p.removeAttribute(attr);
 	}
 
+	e.setAttribute("data-selected-pending", "true");
 	e.focus();
 	e.scrollIntoView({
 		behavior: "smooth",
@@ -192,6 +207,7 @@ function moveFocusTo(e) {
 
 	clearTimeout(selectTimeout);
 	selectTimeout = setTimeout(() => {
+		e.removeAttribute("data-selected-pending");
 		e.setAttribute(attr, "true");
 	}, 0.1 * 1000);
 }

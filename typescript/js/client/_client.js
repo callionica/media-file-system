@@ -7,12 +7,20 @@ class KeyboardCommand {
         this.action = action;
     }
 }
+class Control {
+    constructor() {
+        this.keyboardDisabled = false;
+    }
+}
 // Takes a member function and makes it into a command handler
 function command(o, key) {
     return (shortcut) => {
         console.log(shortcut, key);
-        o[key]();
-        return true;
+        if (!o.keyboardDisabled) {
+            o[key]();
+            return true;
+        }
+        return false;
     };
 }
 function toShortcut(event) {
@@ -21,14 +29,17 @@ function toShortcut(event) {
             " ": "Space",
             "Backspace": "Delete",
             "Enter": "Enter",
-            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "Meta": "",
+            "Control": "",
+            "Alt": "",
+            "Shift": "",
             "ArrowUp": "↑",
             "ArrowDown": "↓",
             "ArrowLeft": "←",
             "ArrowRight": "→",
         };
         let replacement = replacements[key];
-        if (replacement) {
+        if (replacement !== undefined) {
             return replacement;
         }
         return key.toUpperCase();
@@ -84,15 +95,14 @@ class KeyboardController {
         }
         let handled = this.hideCommands_();
         if (!handled) {
-            if (shortcut == "⌘") {
+            if (shortcut == "^") {
                 this.showCommands_();
                 return;
             }
             let commands = this.commands.filter(command => command.enabled && (command.shortcut === shortcut));
-            handled = false;
             for (let command of commands) {
-                handled = command.action(shortcut);
-                if (handled) {
+                handled = true;
+                if (command.action(shortcut)) {
                     break;
                 }
             }
@@ -171,8 +181,9 @@ class Environment {
     }
 }
 //# sourceMappingURL=environment.js.map"use strict";
-class List {
+class List extends Control {
     constructor() {
+        super();
         this.commands = [
             new KeyboardCommand("List: Back", "Delete", command(this, "back")),
             new KeyboardCommand("List: Forward", "⇧Delete", command(this, "forward")),
@@ -199,8 +210,9 @@ class List {
     }
 }
 //# sourceMappingURL=list.js.map"use strict";
-class Player {
+class Player extends Control {
     constructor() {
+        super();
         this.commands = [
             new KeyboardCommand("Player: Play/pause", "Space", command(this, "playPause")),
             new KeyboardCommand("Player: Play/pause", "F8", command(this, "playPause")),
@@ -245,9 +257,15 @@ class App {
         this.environment = new Environment();
         this.list = new List();
         this.player = new Player();
+        this.commands = [
+            new KeyboardCommand("App: Video", "V", command(this, "video")),
+            new KeyboardCommand("App: Weather", "W", command(this, "showWeather")),
+            new KeyboardCommand("App: Time", "T", command(this, "showTime")),
+        ];
         this.keyboardController = (() => {
             let keyboardController = new KeyboardController();
             keyboardController.commands.push(...this.environment.commands);
+            keyboardController.commands.push(...this.commands);
             keyboardController.commands.push(...this.list.commands);
             keyboardController.commands.push(...this.player.commands);
             document.onkeydown = (e) => keyboardController.onkeydown(e);
@@ -255,11 +273,20 @@ class App {
             return keyboardController;
         })();
     }
-    up() {
-        console.log("up");
+    showWeather() {
     }
-    down() {
-        console.log("down");
+    showTime() {
+    }
+    video() {
+        let player = document.getElementById("player");
+        let layout = player.getAttribute("data-layout") || "maxi";
+        if (layout != "mini") {
+            layout = "mini";
+        }
+        else {
+            layout = "maxi";
+        }
+        player.setAttribute("data-layout", layout);
     }
 }
 //# sourceMappingURL=app.js.map"use strict";

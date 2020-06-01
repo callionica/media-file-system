@@ -31,9 +31,22 @@ img {
     transition: height 0.6s ease;
 }
 
+#player video {
+    width: 100%;
+    height: 100%;
+    transition: height 0.4s ease, width 0.4s ease;
+    background-color: yellow;
+}
+
 #player[data-layout='mini'] {
     background-color: aqua;
     height: calc(3/16 * var(--width));
+}
+
+#player[data-layout='mini'] video {
+    width: calc(3/9 * var(--width));
+    height: calc(3/16 * var(--width));
+    background-color: yellow;
 }
 
 #library {

@@ -7,12 +7,20 @@ class KeyboardCommand {
         this.action = action;
     }
 }
+class Control {
+    constructor() {
+        this.keyboardDisabled = false;
+    }
+}
 // Takes a member function and makes it into a command handler
 function command(o, key) {
     return (shortcut) => {
         console.log(shortcut, key);
-        o[key]();
-        return true;
+        if (!o.keyboardDisabled) {
+            o[key]();
+            return true;
+        }
+        return false;
     };
 }
 function toShortcut(event) {
@@ -21,14 +29,17 @@ function toShortcut(event) {
             " ": "Space",
             "Backspace": "Delete",
             "Enter": "Enter",
-            "Meta": "", "Control": ":", "Alt": "", "Shift": "",
+            "Meta": "",
+            "Control": "",
+            "Alt": "",
+            "Shift": "",
             "ArrowUp": "↑",
             "ArrowDown": "↓",
             "ArrowLeft": "←",
             "ArrowRight": "→",
         };
         let replacement = replacements[key];
-        if (replacement) {
+        if (replacement !== undefined) {
             return replacement;
         }
         return key.toUpperCase();
@@ -84,15 +95,14 @@ class KeyboardController {
         }
         let handled = this.hideCommands_();
         if (!handled) {
-            if (shortcut == "⌘") {
+            if (shortcut == "^") {
                 this.showCommands_();
                 return;
             }
             let commands = this.commands.filter(command => command.enabled && (command.shortcut === shortcut));
-            handled = false;
             for (let command of commands) {
-                handled = command.action(shortcut);
-                if (handled) {
+                handled = true;
+                if (command.action(shortcut)) {
                     break;
                 }
             }
