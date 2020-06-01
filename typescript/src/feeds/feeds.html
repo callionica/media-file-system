@@ -230,9 +230,13 @@
             e.querySelector(".title").innerText = feed.title;
             e.querySelector(".description").innerText = feed.description;
             e.querySelector(".genres").innerText = genres;
-            e.querySelector(".duration").innerText = human.formatSeconds(feed.typicalDurationMinutes * 60) || "";
+            e.querySelector(".duration").innerText = feed.typicalDurationMinutes ? human.formatSeconds(feed.typicalDurationMinutes * 60) : "";
             // e.querySelector(".html").href = feed.home_page_url;
             // e.querySelector(".html").innerText = `HTML for ${feed.title}`;
+
+            if (feed.icon == undefined) {
+				e.classList.add("no-image");
+			}
 
             let a = e.querySelector(".rss");
             a.dataset.feed = JSON.stringify(feed, null, 2);
@@ -427,6 +431,11 @@ let feed = ${JSON.stringify({ title, feed_url, items } = result)};
             overflow: hidden;
             text-overflow: ellipsis;
             color: var(--ink-2);
+        }
+
+        .no-image .description {
+            height: auto;
+            max-height: calc(var(--five-lines));
         }
 
         .item {
