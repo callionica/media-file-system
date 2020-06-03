@@ -139,43 +139,55 @@
             return data;
         }
 
+        function attr(e, name) {
+            let value = e.getAttribute(name);
+            if (value != undefined) {
+                return value.trim();
+            }
+            return undefined;
+        }
+
+        function sel(e, selector) {
+            let valueNode = e.querySelector(selector);
+            if (valueNode != undefined) {
+                return valueNode.textContent.trim();
+            }
+            return undefined;
+        }
+
         async function getFeeds(url) {
             let genreSet = {};
             let channels = {};
             let data = await load(url);
 
-            let title = data.querySelector("title").textContent.trim();
+            let title = sel(data, "title");
             let results = [...data.querySelectorAll("outline[type='rss']")];
             console.log(results);
 
             let feeds = results.map(o => {
-                let g = o.getAttribute("bbcgenres");
-                let d = o.getAttribute("description");
-                let channel = o.parentNode && o.parentNode.getAttribute("text");
-                if (channel != undefined) {
-                    channel = channel.trim();
-                }
+                let g = attr(o, "bbcgenres");
+                let description = attr(o, "description");
+                let channel = o.parentNode && attr(o.parentNode, "text");
 
                 let genres = [];
                 if (g != undefined) {
                     genres = g.split(",").map(g => g.trim()).filter(g => g);
                 }
 
-                let title = o.getAttribute("text").trim();
+                let title = attr(o, "text");
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
 
                 let result = {
                     title,
-                    description: d && d.trim(),
-                    feed_url: o.getAttribute("xmlUrl"),
-                    home_page_url: o.getAttribute("htmlUrl"),
-                    icon: o.getAttribute("imageHref"),
+                    description,
+                    feed_url: attr(o, "xmlUrl"),
+                    home_page_url: attr(o, "htmlUrl"),
+                    icon: attr(o, "imageHref"),
 
                     sortTitle,
                     channel,
                     genres,
-                    typicalDurationMinutes: parseInt(o.getAttribute("typicalDurationMins"), 10) || undefined,
-                    // language: o.getAttribute("language"), // Doesn't match language of text or content
+                    typicalDurationMinutes: parseInt(attr(o, "typicalDurationMins"), 10) || undefined,
                 };
 
                 for (let genre of genres) {
@@ -228,7 +240,7 @@
 
             e.querySelector(".image").src = feed.icon;
             e.querySelector(".title").innerText = feed.title;
-            e.querySelector(".description").innerText = feed.description;
+            e.querySelector(".description").innerText = feed.description || "";
             e.querySelector(".genres").innerText = genres;
             e.querySelector(".duration").innerText = feed.typicalDurationMinutes ? human.formatSeconds(feed.typicalDurationMinutes * 60) : "";
             // e.querySelector(".html").href = feed.home_page_url;
