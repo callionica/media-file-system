@@ -4,6 +4,18 @@ class Human {
 		this.dateFormatWithoutYear = Intl.DateTimeFormat(undefined, { month: "short", day: "numeric"});
     }
 
+    upgradeToHTTPS(url) {
+        if ((url == undefined) || (url == "")) {
+            return undefined;
+        }
+
+        let result = new URL(url);
+        if (result.protocol == "http:") {
+            result.protocol = "https:";
+        }
+        return result;
+    }
+
     durationFromSeconds(seconds) {
         let totalMinutes = seconds/60;			
         let hours = Math.floor(totalMinutes/60);

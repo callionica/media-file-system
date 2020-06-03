@@ -180,9 +180,9 @@
                 let result = {
                     title,
                     description,
-                    feed_url: attr(o, "xmlUrl"),
-                    home_page_url: attr(o, "htmlUrl"),
-                    icon: attr(o, "imageHref"),
+                    feed_url: human.upgradeToHTTPS(attr(o, "xmlUrl")),
+                    home_page_url: human.upgradeToHTTPS(attr(o, "htmlUrl")),
+                    icon: human.upgradeToHTTPS(attr(o, "imageHref")),
 
                     sortTitle,
                     channel,
