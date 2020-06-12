@@ -216,7 +216,7 @@
                 let title = sel(o, "title");
                 let sortTitle = title.replace(/^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des)) (?<remainder>.*)$/i, "$<remainder>");
 
-                let description = sel(o, "description");
+                let description = human.removeMarkup(sel(o, "description"));
                 let subtitle = sel(o, "subtitle");
 
                 let date_published;

@@ -16,6 +16,16 @@ class Human {
         return result;
     }
 
+    removeMarkup(text) {
+        if ((text == undefined) || (text == "")) {
+            return undefined;
+        }
+
+        let e = document.createElement("div");
+        e.innerHTML = text;
+        return e.textContent.trim();
+    }
+
     durationFromSeconds(seconds) {
         let totalMinutes = seconds/60;			
         let hours = Math.floor(totalMinutes/60);
